@@ -1,0 +1,5 @@
+# 项目相关配置
+spring:
+  profiles:
+    #    active: prod
+    active: dev

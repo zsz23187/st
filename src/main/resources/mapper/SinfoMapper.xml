@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.st.demo.mapper.SinfoMapper">
+
+    <insert id="saveData" parameterType="java.util.List">
+        insert into
+        sinfo(stime,scode,sname,sclose,shigh,slow,sopen,slclose,schg,spchg,surnover,sotur,svatur,stcap,smcap)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.stime},#{item.scode},#{item.sname},#{item.sclose},#{item.shigh},#{item.slow},#{item.sopen},#{item.slclose},#{item.schg},#{item.spchg},#{item.surnover},#{item.sotur},#{item.svatur},#{item.stcap},#{item.smcap})
+        </foreach>
+    </insert>
+
+
+    <delete id="deleteData">
+        delete from sinfo where scode=#{scode}
+    </delete>
+
+    <select id="findByCode" resultType="java.lang.String">
+        select stime from sinfo where scode=#{socde}
+        order by date_format(stime,'%Y-%m-%d') desc LIMIT 1
+    </select>
+
+    <select id="findAllByCode" resultType="java.lang.String">
+        select distinct(scode) from sinfo where stime=#{stime}
+    </select>
+</mapper>
