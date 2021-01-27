@@ -17,6 +17,9 @@ public interface SlistMapper {
     int deleteDataAll();
 
     List<SlistEntity> findAll();
+
+    //查询已经退市的
+    List<SlistEntity> findDelAll();
 //
 //    List<SlistEntity> findByCode(String scode);
 //

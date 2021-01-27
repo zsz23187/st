@@ -1,6 +1,7 @@
 package com.st.demo.mapper;
 
 import com.st.demo.entity.SinfoEntity;
+import com.st.demo.entity.SlistEntity;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ public interface SinfoMapper {
     //增删改查
     int saveData(List<SinfoEntity> slist);
 
-    int deleteData(String scode);
+    int deleteData(List<SinfoEntity> scode);
 
     List<String> findAllByCode(String stime);
 
@@ -21,5 +22,12 @@ public interface SinfoMapper {
 //
 //    List<SinfoEntity> findByTime(String scode, String starty, String endy);
 
+    List<String> findDelCode(String stime);
 
+    //当日的数据
+    List<SinfoEntity> findDayAll();
+    //当日的数据
+    int saveDataDay(List<SinfoEntity> slist);
+
+    int deleteDay();
 }

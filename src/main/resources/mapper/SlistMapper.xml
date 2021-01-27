@@ -26,4 +26,8 @@
     <select id="findAll" resultType="com.st.demo.entity.SlistEntity">
         select * from slist;
     </select>
+
+    <select id="findDelAll" resultType="com.st.demo.entity.SlistEntity">
+        select * from slist_tui;
+    </select>
 </mapper>

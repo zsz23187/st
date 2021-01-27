@@ -13,8 +13,12 @@
     </insert>
 
 
-    <delete id="deleteData">
-        delete from sinfo where scode=#{scode}
+    <delete id="deleteData" parameterType="java.util.List">
+        delete from sinfo
+        where scode IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.scode}
+        </foreach>
     </delete>
 
     <select id="findByCode" resultType="java.lang.String">
@@ -25,4 +29,28 @@
     <select id="findAllByCode" resultType="java.lang.String">
         select distinct(scode) from sinfo where stime=#{stime}
     </select>
+
+    <select id="findDelCode" resultType="java.lang.String">
+        select scode,stime from (
+        select scode,stime from sinfo  group by scode order by stime desc
+        ) a where a.stime &lt; #{stime}
+    </select>
+
+    <select id="findDayAll" resultType="com.st.demo.entity.SinfoEntity">
+        select * from sinfoday
+    </select>
+
+
+    <insert id="saveDataDay" parameterType="java.util.List">
+        insert into
+        sinfoday(scode,sname,sopen)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.scode},#{item.sname},#{item.sopen})
+        </foreach>
+    </insert>
+
+    <delete id="deleteDay">
+        delete from sinfoday
+    </delete>
 </mapper>

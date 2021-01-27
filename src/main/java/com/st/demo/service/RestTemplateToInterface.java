@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -123,39 +124,49 @@ public class RestTemplateToInterface<T> {
         return body;
     }
 
-    public List<SinfoEntity> readCSVFileWithMap(String filePath, String name) throws Exception {
+    public List<SinfoEntity> readCSVFileWithMap(String filePath, String name){
         List<SinfoEntity> slist = new ArrayList<>();
-        URL httpurl = new URL(filePath);
-        HttpURLConnection conn = (HttpURLConnection) httpurl.openConnection();
-        conn.connect();
-        BufferedReader reader2 = new BufferedReader(
-                new InputStreamReader(httpurl.openStream(), "gbk"));
-        String s;
-        while ((s = reader2.readLine()) != null) {
-            String[] ss = s.split(",");
-            //不是第一行 开始处理数据
-            if(!ss[0].equals("日期")){
-                SinfoEntity se = new SinfoEntity();
-                se.setStime(ss[0]); //日期
-                se.setScode(StringUtils.trimAllWhitespace(ss[1]).substring(1)); //代码
-                se.setSname(name); //名称StringUtils.trimAllWhitespace(ss[2])
-                se.setSclose(Double.parseDouble(ss[3])); //收盘价
-                se.setShigh(Double.parseDouble(ss[4])); //当日最高价
-                se.setSlow(Double.parseDouble(ss[5])); //当日最低价
-                se.setSopen(Double.parseDouble(ss[6])); //开盘价
-                se.setSlclose(Double.parseDouble(ss[7])); //前日收盘价
-                se.setSchg(Double.parseDouble(ss[8].toLowerCase().equals("none")? "0":ss[8])); //涨跌额
-                se.setSpchg(Double.parseDouble(ss[9].toLowerCase().equals("none")? "0":ss[9])); //涨跌幅
-                se.setSurnover(Double.parseDouble(ss[10].toLowerCase().equals("none")? "0":ss[10])); //换手率
-                se.setSotur(Double.parseDouble(ss[11].toLowerCase().equals("none")? "0":ss[11])); //成交量
-                se.setSvatur(Double.parseDouble(ss[12].toLowerCase().equals("none")? "0":ss[12])); //成交额
-                se.setStcap(Double.parseDouble(ss[13].toLowerCase().equals("none")? "0":ss[13])); //总市值
-                se.setSmcap(Double.parseDouble(ss[14].toLowerCase().equals("none")? "0":ss[14])); //流通市值
-                slist.add(se);
+        int flg = 0;
+        URL httpurl = null;
+        HttpURLConnection conn = null;
+        try {
+            httpurl = new URL(filePath);
+            conn = (HttpURLConnection) httpurl.openConnection();
+            conn.connect();
+            if(500 == conn.getResponseCode() && flg < 5){
+                readCSVFileWithMap(filePath,name); flg++;
             }
+            BufferedReader reader2 = new BufferedReader(
+                    new InputStreamReader(httpurl.openStream(), "gbk"));
+            String s;
+            while ((s = reader2.readLine()) != null) {
+                String[] ss = s.split(",");
+                //不是第一行 开始处理数据
+                if (!ss[0].equals("日期")) {
+                    SinfoEntity se = new SinfoEntity();
+                    se.setStime(ss[0]); //日期
+                    se.setScode(StringUtils.trimAllWhitespace(ss[1]).substring(1)); //代码
+                    se.setSname(name); //名称StringUtils.trimAllWhitespace(ss[2])
+                    se.setSclose(Double.parseDouble(ss[3])); //收盘价
+                    se.setShigh(Double.parseDouble(ss[4])); //当日最高价
+                    se.setSlow(Double.parseDouble(ss[5])); //当日最低价
+                    se.setSopen(Double.parseDouble(ss[6])); //开盘价
+                    se.setSlclose(Double.parseDouble(ss[7])); //前日收盘价
+                    se.setSchg(Double.parseDouble(ss[8].toLowerCase().equals("none") ? "0" : ss[8])); //涨跌额
+                    se.setSpchg(Double.parseDouble(ss[9].toLowerCase().equals("none") ? "0" : ss[9])); //涨跌幅
+                    se.setSurnover(Double.parseDouble(ss[10].toLowerCase().equals("none") ? "0" : ss[10])); //换手率
+                    se.setSotur(Double.parseDouble(ss[11].toLowerCase().equals("none") ? "0" : ss[11])); //成交量
+                    se.setSvatur(Double.parseDouble(ss[12].toLowerCase().equals("none") ? "0" : ss[12])); //成交额
+                    se.setStcap(Double.parseDouble(ss[13].toLowerCase().equals("none") ? "0" : ss[13])); //总市值
+                    se.setSmcap(Double.parseDouble(ss[14].toLowerCase().equals("none") ? "0" : ss[14])); //流通市值
+                    slist.add(se);
+                }
+            }
+            reader2.close();
+            conn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        reader2.close();
-        conn.disconnect();
         return slist;
     }
 

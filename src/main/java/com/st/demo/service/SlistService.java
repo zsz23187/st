@@ -30,4 +30,12 @@ public class SlistService {
     public List<SlistEntity> findAll(){
         return slistMapper.findAll();
     }
+
+    /**
+     * 查询已经退市的
+     * @return
+     */
+    public List<SlistEntity> findDelAll(){
+        return slistMapper.findDelAll();
+    }
 }
