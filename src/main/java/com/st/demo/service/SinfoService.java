@@ -45,4 +45,20 @@ public class SinfoService {
     public int deleteDay(){
         return sinfoMapper.deleteDay();
     }
+
+    public int saveStime(List<SinfoEntity> slist){
+        return sinfoMapper.saveStime(slist);
+    }
+
+    public int deleteStime(){
+        return sinfoMapper.deleteStime();
+    }
+
+    public List<SinfoEntity> findStime(){
+        return sinfoMapper.findStime();
+    }
+
+    public List<String> findAllByTime(String time){
+        return sinfoMapper.findAllByTime(time);
+    }
 }

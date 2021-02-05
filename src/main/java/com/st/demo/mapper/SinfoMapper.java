@@ -30,4 +30,12 @@ public interface SinfoMapper {
     int saveDataDay(List<SinfoEntity> slist);
 
     int deleteDay();
+
+    int saveStime(List<SinfoEntity> slist);
+
+    int deleteStime();
+
+    List<SinfoEntity> findStime();
+
+    List<String> findAllByTime(String time);
 }

@@ -213,7 +213,7 @@ public class GetSlistController {
         String err = "";
         try {
 //先查询每个股票是否有当天的信息，没有则插入新数据
-            List<String> scodeList = sinfoService.findAllByCode(symd.format(new Date()));
+            List<String> scodeList = sinfoService.findAllByTime(symd.format(new Date()));
             List<SlistEntity> delOld = stockList.stream().filter(new Predicate<SlistEntity>() {
                 @Override
                 public boolean test(SlistEntity student) {
@@ -270,6 +270,10 @@ public class GetSlistController {
                 st = 0;
             }
             logger.info("保存信息结束" + sdf.format(new Date()));
+            List<SinfoEntity> upTime = sinfoService.findStime();
+            sinfoService.deleteStime();
+            sinfoService.saveStime(upTime);
+            logger.info("更新最后日期结束--" + sdf.format(new Date()));
             System.out.println("over");
         } catch (Exception e) {
             logger.error(err);

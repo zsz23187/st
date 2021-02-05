@@ -22,8 +22,7 @@
     </delete>
 
     <select id="findByCode" resultType="java.lang.String">
-        select stime from sinfo where scode=#{socde}
-        order by date_format(stime,'%Y-%m-%d') desc LIMIT 1
+        select stime from sinfotime where scode=#{socde}
     </select>
 
     <select id="findAllByCode" resultType="java.lang.String">
@@ -53,4 +52,24 @@
     <delete id="deleteDay">
         delete from sinfoday
     </delete>
+    <select id="findStime" resultType="com.st.demo.entity.SinfoEntity">
+        SELECT a.scode,a.sname,a.stime FROM ( SELECT * FROM sinfo ORDER BY stime DESC ) a GROUP BY scode
+    </select>
+
+    <insert id="saveStime" parameterType="java.util.List">
+        insert into
+        sinfotime(scode,sname,stime)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.scode},#{item.sname},#{item.stime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteStime">
+        delete from sinfotime
+    </delete>
+
+    <select id="findAllByTime" resultType="java.lang.String">
+        select scode from sinfotime where stime=#{stime}
+    </select>
 </mapper>
