@@ -541,6 +541,39 @@ public class GetSlistController {
         }
     }
 
+    @PostMapping(value = "/getS2")
+    @ApiOperation(value = "获取测试数据2")
+    public void getStock2(@RequestBody S1VO jso) {
+        try {
+//            String scode = jso.getString("scode");
+            int beg = jso.getBeg();
+            int end = jso.getEnd();
+            int num = jso.getNum();
+            List<List<SinfoEntity>> reList = new ArrayList<>();
+            List<SlistEntity> slList = slistService.findAll();
+
+            //最近num天数据
+            List<SinfoEntity> stList = sinfoService.findByCodeTime("002971",beg,end); //findByTime(beg, end);
+//            for (int j = 0; j < slList.size(); j++) {
+//                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
+//                int finalJ = j;
+//                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
+//                if (null != selist && selist.size() > num - 1) {
+//                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
+//                    reList.add(ssl);
+//                }
+//            }
+            reList.add(stList);
+            if (reList.size() < 10000)
+                CommUtil.method5(reList,12,26,9,1,50);
+
+
+            System.out.println("完了");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor

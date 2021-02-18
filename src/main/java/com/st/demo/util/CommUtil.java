@@ -6,9 +6,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 
 public class CommUtil {
     public static String getReplace(String num) {
@@ -29,6 +28,55 @@ public class CommUtil {
     public static final Double getEXPMA(final List<Double> list, final int number) {
         // 开始计算EMA值，
         Double k = 2d / (number + 1d);// 计算出序数
+        Double ema = list.get(0);// 第一天ema等于当天收盘价
+        for (int i = 1; i < list.size(); i++) {
+            // 第二天以后，当天收盘 收盘价乘以系数再加上昨天EMA乘以系数-1
+            ema = list.get(i) * k + ema * (1 - k);
+        }
+        return ema;
+    }
+
+    /**
+     * Calculate MA,
+     *
+     * @param list :Price list to calculate，the first at head, the last at tail.
+     * @return
+     */
+    public static final Double getMA(final List<Double> list, int num) {
+        Double ema = 0d;//
+//        for (int i = 0; i <= list.size() - num; i++) {
+//            ema = 0d;
+//            for (int j = i; j < num + i; j++) {
+//                ema += list.get(j);
+//            }
+//            ema = ema / num;
+//        }
+        if (num > list.size()) {
+            for (int i = 0; i < list.size(); i++) {
+                ema += list.get(i);
+            }
+            if (list.size() < 1)
+                return 0d;
+            else
+                return ema == 0d ? 0d : ema / list.size();
+        }
+
+        for (int i = list.size() - num; i < list.size(); i++) {
+            ema += list.get(i);
+        }
+        ema = ema / num;
+        return ema;
+    }
+
+    /**
+     * Calculate SMA,
+     *
+     * @param list :Price list to calculate，the first at head, the last at tail.
+     * @return
+     */
+    public static final Double getSMA(final List<Double> list, final int number) {
+        // 开始计算EMA值，
+        Double k = 1d / (number);// 计算出序数
         Double ema = list.get(0);// 第一天ema等于当天收盘价
         for (int i = 1; i < list.size(); i++) {
             // 第二天以后，当天收盘 收盘价乘以系数再加上昨天EMA乘以系数-1
@@ -110,7 +158,7 @@ public class CommUtil {
         FileWriter fw = null;
         try {
 //如果文件存在，则追加内容；如果文件不存在，则创建文件
-            File f = new File("D:\\stest\\s"+rlist.get(0).get(rlist.get(0).size()-1).getTtime()+".txt");
+            File f = new File("D:\\stest\\s" + rlist.get(0).get(rlist.get(0).size() - 1).getTtime() + ".txt");
             if (f.exists())
                 f.delete();
             fw = new FileWriter(f, true);
@@ -175,10 +223,10 @@ public class CommUtil {
 //            pw.print(avob+",");
 //            pw.print(slist.get(slist.size()-3).getSotur()>avob?1:0);
 //            pw.println();
-            ots+=",";
-            ots+=10000*(slist.get(slist.size() - 1).getSopen() -
-                    slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen()+10000-10000/slist.get(slist.size() - 2).getSopen()*0.04;
-            if (slist.get(slist.size() - 3).getSotur() > avob && md[2] > 0 && md[1] < 0 && md[0]>0)
+            ots += ",";
+            ots += 10000 * (slist.get(slist.size() - 1).getSopen() -
+                    slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen() + 10000 - 10000 / slist.get(slist.size() - 2).getSopen() * 0.04;
+            if (slist.get(slist.size() - 3).getSotur() > avob && md[2] > 0 && md[1] < 0 && md[0] > 0)
                 outp.add(ots);
         }
         for (String s : outp) {
@@ -199,7 +247,7 @@ public class CommUtil {
         FileWriter fw = null;
         try {
 //如果文件存在，则追加内容；如果文件不存在，则创建文件
-            File f = new File("D:\\stest\\s"+rlist.get(0).get(rlist.get(0).size()-1).getTtime()+".txt");
+            File f = new File("D:\\stest\\s" + rlist.get(0).get(rlist.get(0).size() - 1).getTtime() + ".txt");
             if (f.exists())
                 f.delete();
             fw = new FileWriter(f, true);
@@ -222,14 +270,14 @@ public class CommUtil {
             }
             ots += (slist.get(slist.size() - 1).getSopen() - slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen() + ",";
             double avob = 0d;
-            double sopen = 0d,sclose = 0d;
+            double sopen = 0d, sclose = 0d;
             for (int j = 0; j < slist.size() - 2; j++) {
                 avob += slist.get(j).getSotur();
                 sopen += slist.get(j).getSopen();
                 sclose += slist.get(j).getSclose();
             }
-            sopen = sopen/5;
-            sclose = sclose/5;
+            sopen = sopen / 5;
+            sclose = sclose / 5;
             avob = avob / 5;
             double[] md = new double[3];
             for (int j = 0; j < 3; j++) {
@@ -237,7 +285,7 @@ public class CommUtil {
                 SinfoEntity s2 = slist.get(j + 1);
                 SinfoEntity s3 = slist.get(j + 2);
                 double avg = (s1.getSopen() + s2.getSopen() + s3.getSopen()) / 3;
-                double a3 = s3.getSopen() - avg > 0 ? Math.log(Math.abs(s3.getSopen() - avg)/ s3.getSopen() * 100) : Math.log(0.01+Math.abs(s3.getSopen() - avg)/s3.getSopen() * 100);
+                double a3 = s3.getSopen() - avg > 0 ? Math.log(Math.abs(s3.getSopen() - avg) / s3.getSopen() * 100) : Math.log(0.01 + Math.abs(s3.getSopen() - avg) / s3.getSopen() * 100);
                 md[j] = a3;
                 ots += a3 + ",";
             }
@@ -250,30 +298,30 @@ public class CommUtil {
             ots += slist.get(slist.size() - 3).getSotur() + ",";
             ots += avob + ",";
             ots += slist.get(slist.size() - 3).getSotur() > avob ? 1 : 0;
-            ots+=",";
-            ots+=10000*(slist.get(slist.size() - 1).getSopen() -
-                    slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen()+10000-10000/slist.get(slist.size() - 2).getSopen()*0.04;
+            ots += ",";
+            ots += 10000 * (slist.get(slist.size() - 1).getSopen() -
+                    slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen() + 10000 - 10000 / slist.get(slist.size() - 2).getSopen() * 0.04;
             //当日涨且收盘大于收盘价的boll5日，开盘小于boll5日
-            if(slist.get(slist.size() - 3).getSclose()>sclose && slist.get(slist.size() - 3).getSopen()<sclose)
-                ots +=",1";
+            if (slist.get(slist.size() - 3).getSclose() > sclose && slist.get(slist.size() - 3).getSopen() < sclose)
+                ots += ",1";
             else
                 ots += ",0";
             //当日涨且收盘大于开盘价的boll5日，开盘小于boll5日
-            if(slist.get(slist.size() - 3).getSclose()>sopen && slist.get(slist.size() - 3).getSopen()<sopen)
-                ots +=",1";
+            if (slist.get(slist.size() - 3).getSclose() > sopen && slist.get(slist.size() - 3).getSopen() < sopen)
+                ots += ",1";
             else
                 ots += ",0";
             //当日跌且开盘大于收盘价的boll5日，收盘盘小于boll5日
-            if(slist.get(slist.size() - 3).getSopen()>sclose && slist.get(slist.size() - 3).getSclose()<sclose)
-                ots +=",1";
+            if (slist.get(slist.size() - 3).getSopen() > sclose && slist.get(slist.size() - 3).getSclose() < sclose)
+                ots += ",1";
             else
                 ots += ",0";
             //当日跌且开盘大于开盘价的boll5日，收盘小于boll5日
-            if(slist.get(slist.size() - 3).getSopen()>sopen && slist.get(slist.size() - 3).getSclose()<sopen)
-                ots +=",1";
+            if (slist.get(slist.size() - 3).getSopen() > sopen && slist.get(slist.size() - 3).getSclose() < sopen)
+                ots += ",1";
             else
                 ots += ",0";
-            if (slist.get(slist.size() - 3).getSotur() > avob && md[2] > 0 && md[1] > 0 && md[0]>0)
+            if (slist.get(slist.size() - 3).getSotur() > avob && md[2] > 0 && md[1] > 0 && md[0] > 0)
                 outp.add(ots);
         }
         for (String s : outp) {
@@ -308,10 +356,10 @@ public class CommUtil {
 
             String sout = "{";
             List<SinfoEntity> slist = rlist.get(i);
-            sout+="name:'" + slist.get(0).getSname()+i+"',";
-            sout+="title:'"+slist.get(0).getScode() + "',";
-            sout+="type:'line',stock:'总量',";
-            sout+="data:[";
+            sout += "name:'" + slist.get(0).getSname() + i + "',";
+            sout += "title:'" + slist.get(0).getScode() + "',";
+            sout += "type:'line',stock:'总量',";
+            sout += "data:[";
             double avob = 0d;
             for (int j = 0; j < slist.size() - 2; j++) {
                 avob += slist.get(j).getSopen();
@@ -319,12 +367,12 @@ public class CommUtil {
             avob = avob / 5;
 
             for (int j = 0; j < slist.size(); j++) {
-                sout+=slist.get(j).getSopen()/avob-1+",";
+                sout += slist.get(j).getSopen() / avob - 1 + ",";
 //                pw.print(slist.get(j).getStime() + ",");
 //                pw.print(slist.get(j).getSopen() + ",");
 //                pw.print(slist.get(j).getSclose() - slist.get(j).getSopen() >= 0 ? 1 + "," : 0 + ",");
             }
-            sout=sout.substring(0,sout.length()-1) + "]},";
+            sout = sout.substring(0, sout.length() - 1) + "]},";
 //            pw.print((slist.get(slist.size() - 1).getSopen() - slist.get(slist.size() - 2).getSopen()) / slist.get(slist.size() - 2).getSopen());
 //            pw.println();
             pw.println(sout);
@@ -347,16 +395,172 @@ public class CommUtil {
     //直接开盘买
 
 
-    public static double[] getBoll(List<SinfoEntity> slist){
-        double[] boll = new double[2]; //boll开盘和收盘
-        double sopen = 0d;
-        double sclose = 0d;
-        for (int i = 0; i < slist.size(); i++) {
-            sopen += slist.get(i).getSopen();
-            sclose += slist.get(i).getSclose();
+    //生成文本文件
+
+    /**
+     * @param rlist
+     * @param shortnum macd的短日期 12
+     * @param langnum  macd的长日期 26
+     * @param mid      macd的平均日，一般为9
+     * @param t        交易日
+     * @param maxn     从数据的第n天开始统计
+     */
+    public static void method5(List<List<SinfoEntity>> rlist, int shortnum, int langnum,
+                               int mid, int t, int maxn) {
+        FileWriter fw = null;
+        try {
+//如果文件存在，则追加内容；如果文件不存在，则创建文件
+            File f = new File("D:\\stest\\macd.txt");
+            if (f.exists())
+                f.delete();
+            fw = new FileWriter(f, true);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        boll[0] = sopen/slist.size();
-        boll[1] = sclose/ slist.size();
+        List<String> outText = new ArrayList<>();
+        PrintWriter pw = new PrintWriter(fw);
+        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50");
+//        pw.println("代码,名称,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,幅度");
+        for (int i = 0; i < rlist.size(); i++) {
+
+            List<Map<String, Double>> macd = new ArrayList<>();
+            List<Double> boll = new ArrayList<>();
+            List<SinfoEntity> slist = rlist.get(i);
+            List<Double[]> zlmm = new ArrayList<>();
+            List<Double> ema12 = new ArrayList<>();
+            List<Double> ema50 = new ArrayList<>();
+
+            //最近27日的收盘价
+            for (int j = 0; j < slist.size(); j++) {
+                List<Double> closeList = new ArrayList<>();
+                for (int k = 0; k <= j; k++) {
+                    closeList.add(slist.get(k).getSclose());
+                }
+                String so = "";
+                so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
+                        slist.get(j).getStime() + ",";
+                macd.add(getMACD(closeList, shortnum, langnum, mid));
+                zlmm.add(getZLMM(closeList));
+                boll.add(getBoll(closeList, 21));
+                ema12.add(getEXPMA(closeList, 12));
+                ema50.add(getEXPMA(closeList, 50));
+                so += getNumFormat(macd.get(j).get("DIF"))
+                        + "," + getNumFormat(macd.get(j).get("DEA"))
+                        + "," + getNumFormat(macd.get(j).get("MACD"));
+                so += "," + getNumFormat(zlmm.get(j)[0])
+                        + "," + getNumFormat(zlmm.get(j)[1])
+                        + "," + getNumFormat(zlmm.get(j)[2]);
+                so += "," + getNumFormat(boll.get(j));
+                so += "," + getNumFormat(ema12.get(j));
+                so += "," + getNumFormat(ema50.get(j));
+                outText.add(so);
+            }
+//            for (int j = 0; j < macd.size(); j++) {
+//                outText.add("DIF," +getNumFormat(macd.get(j).get("DIF"))
+//                +",DEA," + getNumFormat(macd.get(j).get("DEA"))
+//                +",MACD," + getNumFormat(macd.get(j).get("MACD")));
+//            }
+        }
+        for (String s : outText) {
+            pw.println(s);
+        }
+        pw.flush();
+        try {
+            fw.flush();
+            pw.close();
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //计算公式
+    //LC :=REF(CLOSE,1);
+    //RSI2:=SMA(MAX(CLOSE-LC,0),12,1)/SMA(ABS(CLOSE-LC),12,1)*100;
+    //RSI3:=SMA(MAX(CLOSE-LC,0),18,1)/SMA(ABS(CLOSE-LC),18,1)*100;
+    //MMS:MA(3*RSI2-2*SMA(MAX(CLOSE-LC,0),16,1)/SMA(ABS(CLOSE-LC),16,1)*100,3);
+    //MMM:EMA(MMS,8);
+    //MML:MA(3*RSI3-2*SMA(MAX(CLOSE-LC,0),12,1)/SMA(ABS(CLOSE-LC),12,1)*100,5);
+    public static Double[] getZLMM(List<Double> slist) {
+        Double[] zlmm = new Double[3];
+        List<Double> rsi2 = new ArrayList<>();
+        List<Double> rsi3 = new ArrayList<>();
+        List<Double> mms = new ArrayList<>();
+
+        for (int i = slist.size() - 1; i >= 0; i--) {
+            List<Double> maxCloseList = new ArrayList<>();
+            List<Double> absCloseList = new ArrayList<>();
+            List<Double> sublist = slist.subList(0, slist.size() - i);
+            for (int k = 0; k < sublist.size(); k++) {
+                if (k == 0) {
+                    maxCloseList.add(0d);
+                    absCloseList.add(0d);
+                } else {
+                    double lc = slist.get(k - 1);
+                    double max = maxNum(slist.get(k) - lc, 0d);
+                    double abs = Math.abs(slist.get(k) - lc);
+                    maxCloseList.add(max);
+                    absCloseList.add(abs);
+                }
+            }
+            if (maxCloseList.size() > 0 && absCloseList.size() > 0 && sublist.size()>1) {
+                double si2 = getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100;
+                double si3 = getSMA(maxCloseList, 18) / getSMA(absCloseList, 18) * 100;
+                rsi2.add(3 * si2 - 2 * getSMA(maxCloseList, 16) / getSMA(absCloseList, 16) * 100);
+                rsi3.add(3 * si3 - 2 * getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100);
+                mms.add(getMA(rsi2, 3));
+            }
+        }
+        zlmm[0] = getMA(rsi2, 3);
+        if (mms.size() < 1)
+            zlmm[1] = 0d;
+        else
+            zlmm[1] = getEXPMA(mms, 8);
+        zlmm[2] = getMA(rsi3, 5);
+//        for (int i = start; i < slist.size(); i++) {
+//            List<Double> maxCloseList = new ArrayList<>();
+//            List<Double> absCloseList = new ArrayList<>();
+//            for (int k = 1; k <= start; k++) {
+//                double lc = slist.get(k - 1).getSclose();
+//                double max = maxNum(slist.get(k).getSclose() - lc, 0d);
+//                double abs = Math.abs(slist.get(k).getSclose() - lc);
+//                maxCloseList.add(max);
+//                absCloseList.add(abs);
+//            }
+//            double si2 = getSMA(maxCloseList,12)/getSMA(absCloseList,12)*100;
+//            double si3 = getSMA(maxCloseList,18)/getSMA(absCloseList,18)*100;
+//            rsi2.add(3*si2-2*getSMA(maxCloseList,16)/getSMA(absCloseList,16)*100);
+//            rsi3.add(3*si3-2*getSMA(maxCloseList,12)/getSMA(absCloseList,12)*100);
+//            mms.add(getMA(rsi2,3));
+//            zlmm[0] = getMA(rsi2,3);
+//            zlmm[1] = getEXPMA(mms,8);
+//            zlmm[2] = getMA(rsi3,5);
+//        }
+        return zlmm;
+    }
+
+    public static double maxNum(double a, double b) {
+        double d = 0d;
+        d = a > b ? a : b;
+        return d;
+    }
+
+    /**
+     * 柏林线，ma(close,n)
+     *
+     * @param slist
+     * @param num
+     * @return
+     */
+    public static double getBoll(List<Double> slist, int num) {
+        double boll = 0d;
+        boll = getMA(slist, num);
         return boll;
+    }
+
+    public static String getNumFormat(double d) {
+        BigDecimal b = new BigDecimal(d);
+        double f1 = b.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+        return String.valueOf(f1);
     }
 }
