@@ -16,7 +16,7 @@ public interface SinfoMapper {
 
     List<String> findAllByCode(String stime);
 
-    List<String> findByCode(String scode);
+    List<String> findTimeByCode(String scode);
 //
 //    List<SinfoEntity> findByName(String sname);
 //
@@ -38,4 +38,10 @@ public interface SinfoMapper {
     List<SinfoEntity> findStime();
 
     List<String> findAllByTime(String time);
+
+    List<SinfoEntity> findByCodeTimeDesc(String scode, Integer beg, Integer end);
+
+    List<SinfoEntity> findByCodeTime(String scode, Integer beg, Integer end);
+
+    List<SinfoEntity> findByTime(Integer beg, Integer end);
 }

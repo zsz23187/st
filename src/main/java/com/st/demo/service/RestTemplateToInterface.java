@@ -1,6 +1,7 @@
 package com.st.demo.service;
 
 import com.st.demo.entity.SinfoEntity;
+import com.st.demo.util.CommUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -142,8 +143,10 @@ public class RestTemplateToInterface<T> {
             while ((s = reader2.readLine()) != null) {
                 String[] ss = s.split(",");
                 //不是第一行 开始处理数据
-                if (!ss[0].equals("日期")) {
+                if (!ss[0].equals("日期") && Double.parseDouble(ss[3])>0d && Double.parseDouble(ss[6])>0d) {
                     SinfoEntity se = new SinfoEntity();
+                    se.setTtime(Integer.parseInt(CommUtil.getReplace(ss[0])));
+                    se.setTcode(Integer.parseInt("2"+StringUtils.trimAllWhitespace(ss[1]).substring(1)));
                     se.setStime(ss[0]); //日期
                     se.setScode(StringUtils.trimAllWhitespace(ss[1]).substring(1)); //代码
                     se.setSname(name); //名称StringUtils.trimAllWhitespace(ss[2])

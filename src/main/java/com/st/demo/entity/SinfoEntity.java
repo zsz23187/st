@@ -7,6 +7,8 @@ import lombok.Setter;
 @Getter
 public class SinfoEntity {
     Integer id;
+    Integer ttime; //交易日期的数字
+    Integer tcode; //股票代码+数字 2+xxxxxx
     String stime; //交易日期
     String scode; //股票代码
     String sname; //股票名称

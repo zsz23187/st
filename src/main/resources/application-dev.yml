@@ -39,24 +39,46 @@ spring:
   session:
     store-type: none
   application:
-      name: st
+    name: st
 
   datasource:
     Driver: com.mysql.jdbc.Driver
     username: stest
     password: stest123
     url: jdbc:mysql://152.136.234.157:31406/stest?useUnicode=true&characterEncoding=UTF-8&useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&serverTimezone=GMT%2B8
-
+    hikari:
+      connection-timeout: 60000
+      minIdle: 10
+      maxPoolSize: 20
+      isAutoCommit: true
+      idle-timeout: 600000
+      max-lifetime: 28740000
+      connection-test-query: SELECT 1
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+        #格式化输出
+      indent_output: true
+        #忽略无法转换的对象
+      fail_on_empty_beans: false
+      #设置空如何序列化
+    defaultPropertyInclusion: NON_EMPTY
+    deserialization:
+        #允许对象忽略json中不存在的属性
+      fail_on_unknown_properties: false
+    parser:
+        #允许出现特殊字符和转义符
+      allow_unquoted_control_chars: true
+        #允许出现单引号
+      allow_single_quotes: true
   # 文件上传
   servlet:
-     multipart:
-       # 单个文件大小
-       max-file-size:  10MB
-       # 设置总上传的文件大小
-       max-request-size:  20MB
+    multipart:
+      # 单个文件大小
+      max-file-size: 10MB
+      # 设置总上传的文件大小
+      max-request-size: 20MB
   # 服务模块
   devtools:
     restart:
@@ -72,9 +94,9 @@ pagehelper:
 
 # MyBatis
 mybatis:
-#    # 搜索指定包别名
-    typeAliasesPackage: com.st.demo.mapper
-#    # 配置mapper的扫描，找到所有的mapper.xml映射文件
-    mapperLocations: classpath*:mapper/*Mapper.xml
+  #    # 搜索指定包别名
+  typeAliasesPackage: com.st.demo.mapper
+  #    # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath*:mapper/*Mapper.xml
 #    # 加载全局的配置文件
 #    configLocation: classpath:mapper/mybatis-config.xml
