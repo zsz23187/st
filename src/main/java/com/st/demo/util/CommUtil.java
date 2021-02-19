@@ -440,27 +440,27 @@ public class CommUtil {
                 for (int k = 0; k <= j; k++) {
                     closeList.add(slist.get(k).getSclose());
                 }
-//                String so = "";
-//                so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
-//                        slist.get(j).getStime() + ",";
+                String so = "";
+                so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
+                        slist.get(j).getStime() + ",";
                 macd.add(getMACD(closeList, shortnum, langnum, mid));
                 zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 21));
                 avgVatur.add(getMA(closeList, 12));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
-//                so += getNumFormat(macd.get(j - maxn).get("DIF"))
-//                        + "," + getNumFormat(macd.get(j - maxn).get("DEA"))
-//                        + "," + getNumFormat(macd.get(j - maxn).get("MACD"));
-//                so += "," + getNumFormat(zlmm.get(j - maxn)[0])
-//                        + "," + getNumFormat(zlmm.get(j - maxn)[1])
-//                        + "," + getNumFormat(zlmm.get(j - maxn)[2]);
-//                so += "," + getNumFormat(boll.get(j - maxn));
-//                so += "," + getNumFormat(ema12.get(j - maxn));
-//                so += "," + getNumFormat(ema50.get(j - maxn));
-//                outText.add(so);
+                so += getNumFormat(macd.get(j - maxn).get("DIF"))
+                        + "," + getNumFormat(macd.get(j - maxn).get("DEA"))
+                        + "," + getNumFormat(macd.get(j - maxn).get("MACD"));
+                so += "," + getNumFormat(zlmm.get(j - maxn)[0])
+                        + "," + getNumFormat(zlmm.get(j - maxn)[1])
+                        + "," + getNumFormat(zlmm.get(j - maxn)[2]);
+                so += "," + getNumFormat(boll.get(j - maxn));
+                so += "," + getNumFormat(ema12.get(j - maxn));
+                so += "," + getNumFormat(ema50.get(j - maxn));
+                outText.add(so);
                 //统计每个股票最近maxn天的指标信息
-                SIndexEntity sindex = copySinfo(slist.get(j - maxn));
+                SIndexEntity sindex = copySinfo(slist.get(j));
                 sindex.setMacd(getNumDouble(macd.get(j - maxn).get("MACD")));
                 sindex.setDif(getNumDouble(macd.get(j - maxn).get("DIF")));
                 sindex.setDea(getNumDouble(macd.get(j - maxn).get("DEA")));
@@ -482,7 +482,8 @@ public class CommUtil {
             int tday = ilist.size() - 1;
             //如果12日ema<50日ema 去掉
             if (ilist.get(tday).getEma12() >= ilist.get(tday).getEma50()) {
-                if (ilist.get(tday - 2).getShigh() <= ilist.get(tday).getBoll()) {
+                if (ilist.get(tday - 2).getShigh() <= ilist.get(tday).getBoll()*1.05) {
+                    System.out.println("xx "+ilist.get(tday).getScode());
                     if (ilist.get(tday).getSopen() > ilist.get(tday).getBoll() && ilist.get(tday).getSclose() < ilist.get(tday).getBoll()) {
                         okStock.add(ilist);
                     }
@@ -491,12 +492,12 @@ public class CommUtil {
         }
         for (int i = 0; i < okStock.size(); i++) {
             String os = "";
-            SIndexEntity dlast = okStock.get(i).get(okStock.get(i).size()-1);
-            SIndexEntity dsecond = okStock.get(i).get(okStock.get(i).size()-2);
-            os+=dlast.getScode()+","+dlast.getSname()+","+dlast.getStime()+",";
-            os+=dlast.getDif()+","+dlast.getDea()+","+dlast.getMacd()+",";
-            os+=dlast.getMms()+","+dlast.getMmm()+","+dlast.getMml()+",";
-            os+=dlast.getBoll()+","+dlast.getEma12()+","+dlast.getEma50();
+            SIndexEntity dlast = okStock.get(i).get(okStock.get(i).size() - 1);
+            SIndexEntity dsecond = okStock.get(i).get(okStock.get(i).size() - 2);
+            os += dlast.getScode() + "," + dlast.getSname() + "," + dlast.getStime() + ",";
+            os += dlast.getDif() + "," + dlast.getDea() + "," + dlast.getMacd() + ",";
+            os += dlast.getMms() + "," + dlast.getMmm() + "," + dlast.getMml() + ",";
+            os += dlast.getBoll() + "," + dlast.getEma12() + "," + dlast.getEma50();
             outText.add(os);
         }
 
@@ -547,8 +548,14 @@ public class CommUtil {
             if (maxCloseList.size() > 0 && absCloseList.size() > 0) { //&& sublist.size()>1 数据从第一天开始的条件
                 double si2 = getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100;
                 double si3 = getSMA(maxCloseList, 18) / getSMA(absCloseList, 18) * 100;
-                rsi2.add(3 * si2 - 2 * getSMA(maxCloseList, 16) / getSMA(absCloseList, 16) * 100);
-                rsi3.add(3 * si3 - 2 * getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100);
+                double ti2 = getSMA(maxCloseList, 16) / getSMA(absCloseList, 16) * 100;
+                double ti3 = getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100;
+                si2 = Double.isNaN(si2) ? 0d : Double.isInfinite(si2) ? 0d : si2;
+                si3 = Double.isNaN(si3) ? 0d : Double.isInfinite(si3) ? 0d : si3;
+                ti2 = Double.isNaN(ti2) ? 0d : Double.isInfinite(ti2) ? 0d : ti2;
+                ti3 = Double.isNaN(ti3) ? 0d : Double.isInfinite(ti3) ? 0d : ti3;
+                rsi2.add(3 * si2 - 2 * ti2);
+                rsi3.add(3 * si3 - 2 * ti3);
                 mms.add(getMA(rsi2, 3));
             }
         }

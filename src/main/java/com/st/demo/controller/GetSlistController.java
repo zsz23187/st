@@ -554,27 +554,27 @@ public class GetSlistController {
             List<SlistEntity> slList = slistService.findAll();
 
             //最近num天数据
-//            List<SinfoEntity> stList = sinfoService.findByCodeTime("002971",beg,end); //findByTime(beg, end);
+//            List<SinfoEntity> stList = sinfoService.findByCodeTime("600169",beg,end); //findByTime(beg, end);
 //            reList.add(stList);
             //method2
-//            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
-//            for (int j = 0; j < slList.size(); j++) {
-//                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
-//                int finalJ = j;
-//                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
-//                if (null != selist && selist.size() > num - 1) {
-//                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
-//                    reList.add(ssl);
-//                }
-//            }
-            //method2
-            //method3
-            for (int i = 0; i < slList.size(); i++) {
-                List<SinfoEntity> selist = sinfoService.findByCodeTime(slList.get(i).getScode(),beg,end);
+            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
+            for (int j = 0; j < slList.size(); j++) {
+                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
+                int finalJ = j;
+                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
                 if (null != selist && selist.size() > num - 1) {
-                    reList.add(selist);
+                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
+                    reList.add(ssl);
                 }
             }
+            //method2
+            //method3
+//            for (int i = 0; i < slList.size(); i++) {
+//                List<SinfoEntity> selist = sinfoService.findByCodeTime(slList.get(i).getScode(),beg,end);
+//                if (null != selist && selist.size() > num - 1) {
+//                    reList.add(selist);
+//                }
+//            }
             //method3
             if (reList.size() < 10000 && reList.size()>0)
                 CommUtil.method5(reList,12,26,9,1,maxn);
