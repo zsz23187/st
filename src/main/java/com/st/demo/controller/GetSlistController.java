@@ -545,7 +545,7 @@ public class GetSlistController {
     @ApiOperation(value = "获取测试数据2")
     public void getStock2(@RequestBody S1VO jso) {
         try {
-//            String scode = jso.getString("scode");
+            String scode = jso.getScode();
             int beg = jso.getBeg();
             int end = jso.getEnd();
             int num = jso.getNum();
@@ -554,19 +554,19 @@ public class GetSlistController {
             List<SlistEntity> slList = slistService.findAll();
 
             //最近num天数据
-//            List<SinfoEntity> stList = sinfoService.findByCodeTime("600169",beg,end); //findByTime(beg, end);
-//            reList.add(stList);
+            List<SinfoEntity> stList = sinfoService.findByCodeTime(scode,beg,end); //findByTime(beg, end);
+            reList.add(stList);
             //method2
-            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
-            for (int j = 0; j < slList.size(); j++) {
-                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
-                int finalJ = j;
-                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
-                if (null != selist && selist.size() > num - 1) {
-                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
-                    reList.add(ssl);
-                }
-            }
+//            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
+//            for (int j = 0; j < slList.size(); j++) {
+//                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
+//                int finalJ = j;
+//                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
+//                if (null != selist && selist.size() > num - 1) {
+//                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
+//                    reList.add(ssl);
+//                }
+//            }
             //method2
             //method3
 //            for (int i = 0; i < slList.size(); i++) {
@@ -589,6 +589,7 @@ public class GetSlistController {
     @Setter
     @NoArgsConstructor
     public static class S1VO {
+        String scode;
         Integer beg;
         Integer end;
         Integer num;

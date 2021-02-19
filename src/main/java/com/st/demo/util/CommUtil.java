@@ -424,6 +424,7 @@ public class CommUtil {
         List<List<SIndexEntity>> sindexList = new ArrayList<>();
 //        pw.println("代码,名称,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,幅度");
         for (int i = 0; i < rlist.size(); i++) {
+            System.out.println("开始分析-"+i);
             List<SIndexEntity> indexList = new ArrayList<>();
             List<Map<String, Double>> macd = new ArrayList<>();
             List<Double> boll = new ArrayList<>();
@@ -431,6 +432,7 @@ public class CommUtil {
             List<Double> ema12 = new ArrayList<>();
             List<Double> ema50 = new ArrayList<>();
             List<Double> avgVatur = new ArrayList<>(); //n日交易额平均值
+            List<Double> avgotur = new ArrayList<>(); //n日交易量平均值
             List<SinfoEntity> slist = rlist.get(i);
 
             maxn = slist.size() - maxn;
@@ -447,6 +449,7 @@ public class CommUtil {
                 zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 21));
                 avgVatur.add(getMA(closeList, 12));
+                avgotur.add(getMA(closeList,12));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
                 so += getNumFormat(macd.get(j - maxn).get("DIF"))
@@ -458,7 +461,7 @@ public class CommUtil {
                 so += "," + getNumFormat(boll.get(j - maxn));
                 so += "," + getNumFormat(ema12.get(j - maxn));
                 so += "," + getNumFormat(ema50.get(j - maxn));
-//                outText.add(so);
+                outText.add(so);
                 //统计每个股票最近maxn天的指标信息
                 SIndexEntity sindex = copySinfo(slist.get(j));
                 sindex.setMacd(getNumDouble(macd.get(j - maxn).get("MACD")));
@@ -475,6 +478,7 @@ public class CommUtil {
             }
             sindexList.add(indexList);
         }
+        System.out.println("开始选股");
         //开始选股，第一步只选最后一天符合要求
         List<List<SIndexEntity>> okStock = new ArrayList<>();
         for (int i = 0; i < sindexList.size(); i++) { //每个股票
@@ -483,26 +487,30 @@ public class CommUtil {
             //如果12日ema<50日ema 去掉
             if (ilist.get(tday).getEma12() >= ilist.get(tday).getEma50()) {
                 if (ilist.get(tday - 2).getShigh() <= ilist.get(tday).getBoll()*1.05) {
-                    System.out.println("xx "+ilist.get(tday).getScode());
                     if (ilist.get(tday).getSopen() > ilist.get(tday).getBoll() && ilist.get(tday).getSclose() < ilist.get(tday).getBoll()) {
                         okStock.add(ilist);
                     }
                 }
             }
         }
+        //www.wewestar.com/thread-293597...https://www.baidu.com/link?url=MXOkrLoCWVuP2kzp4pQNF7mCqE36RPTtA27FD4xYjWHWBSfd5sTkZWGR4OxvtBNxO6nKSsYSHzBMoKSom429a_&wd=&eqid=f61c30f70000357d00000003602f6a39
         for (int i = 0; i < okStock.size(); i++) {
             String os = "";
             SIndexEntity dlast = okStock.get(i).get(okStock.get(i).size() - 1);
-            SIndexEntity dsecond = okStock.get(i).get(okStock.get(i).size() - 2);
+            System.out.println("code "+dlast.getScode());
             os += dlast.getScode() + "," + dlast.getSname() + "," + dlast.getStime() + ",";
             os += dlast.getDif() + "," + dlast.getDea() + "," + dlast.getMacd() + ",";
             os += dlast.getMms() + "," + dlast.getMmm() + "," + dlast.getMml() + ",";
             os += dlast.getBoll() + "," + dlast.getEma12() + "," + dlast.getEma50();
+            //计算权重
+            double weight = 0d;
+            weight = calWeight(okStock.get(i));
+            os+=","+weight;
             outText.add(os);
         }
-
+        System.out.println("开始输出");
         PrintWriter pw = new PrintWriter(fw);
-        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50");
+        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50,权重");
         for (String s : outText) {
             pw.println(s);
         }
@@ -516,6 +524,160 @@ public class CommUtil {
         }
     }
 
+    //计算一个股票当日的权重
+    public static Double calWeight(List<SIndexEntity> slist){
+        SIndexEntity dlast = slist.get(slist.size() - 1);
+        SIndexEntity dsecond = slist.get(slist.size() - 2);
+        SIndexEntity dfive = slist.get(0);
+        double weight = 0d;
+        //最重要的还是看大趋势，2天的小趋势不可靠
+        double emac1 = dlast.getEma12()-dlast.getEma50();
+        double emac2 = dsecond.getEma12()-dsecond.getEma50();
+        //5天的ema趋势
+        double emac5 = dfive.getEma12()-dfive.getEma50();
+        if(emac1>emac2 && emac2>emac5)
+            weight+=0.3;
+        else if(emac1>emac2 && emac2 <=emac5)
+            weight+=0.15;
+        else if(emac1>emac5)
+            weight+=0.1;
+        else if(emac5>emac2 && emac2>emac1)
+            weight -=0.3;
+        else if(emac2>emac1)
+            weight -=0.1;
+//            zlmm曲线走向
+        double ms1 = dlast.getMms()-dsecond.getMms();
+        double ms2 = dsecond.getMms()-dfive.getMms();
+        if(ms1>0 && ms2 > 0){
+            if(ms1>ms2)
+                weight +=0.2;
+            else
+                weight+=0.1;
+        }else if(ms1>0 && ms2<0){
+            weight +=0.1;
+        }else if(ms1<0 && ms2<0)
+            weight -=0.2;
+        double mm1 = dlast.getMmm()-dsecond.getMmm();
+        double mm2 = dsecond.getMmm()-dfive.getMmm();
+        if(mm1>0 && mm2 > 0){
+            if(mm1>mm2)
+                weight +=0.15;
+            else
+                weight+=0.05;
+        }else if(mm1>0 && mm2<0){
+            weight +=0.05;
+        }else if(mm1<0 && mm2<0)
+            weight -=0.1;
+//        double ml1 = dlast.getMml()-dsecond.getMml();
+//        double ml2 = dsecond.getMml()-dfive.getMml();
+        //mms-mml
+        double ms_ml1 = dlast.getMms()-dlast.getMml();
+        double ms_ml2 = dsecond.getMms()-dsecond.getMml();
+        double ms_ml5 = dfive.getMms()-dfive.getMml();
+        if(ms_ml1>0 && ms_ml2>0 && ms_ml5>0){
+            if(ms_ml1>=ms_ml2 && ms_ml2>=ms_ml5){
+                weight+=0.4;
+            }else if(ms_ml1<ms_ml2 && ms_ml2<ms_ml5){
+                weight +=0.05;
+            }else if(ms_ml1<ms_ml2)
+                weight += 0.05;
+            else
+                weight += 0.2;
+        }else if(ms_ml1>0 && ms_ml2<0 && ms_ml5>0){
+            if(ms_ml1>ms_ml5)
+                weight += 0.2;
+            else if(ms_ml1<ms_ml5)
+                weight += 0.05;
+        }else if(ms_ml1>0 && ms_ml2<0 && ms_ml5<0)
+            weight+= 0.15;
+        else if(ms_ml1>ms_ml2)
+            weight+=0.1;
+        else
+            weight-=0.2;
+        //mmm-mml
+        double mm_ml1 = dlast.getMmm()-dlast.getMml();
+        double mm_ml2 = dsecond.getMmm()-dsecond.getMml();
+        double mm_ml5 = dfive.getMmm()-dfive.getMml();
+        if(mm_ml1>0 && mm_ml2>0 && mm_ml5>0){
+            if(mm_ml1>=mm_ml2 && mm_ml2>=mm_ml5){
+                weight+=0.4;
+            }else if(mm_ml1<mm_ml2 && mm_ml2<mm_ml5){
+                weight +=0.05;
+            }else if(mm_ml1<mm_ml2)
+                weight += 0.05;
+            else
+                weight += 0.2;
+        }else if(mm_ml1>0 && mm_ml2<0 && mm_ml5>0){
+            if(mm_ml1>mm_ml5)
+                weight += 0.2;
+            else if(mm_ml1<mm_ml5)
+                weight += 0.05;
+        }else if(mm_ml1>0 && mm_ml2<0 && mm_ml5<0)
+            weight+= 0.15;
+        else
+            weight-=0.2;
+        //mms-mmm 
+        double ms_mm1 = dlast.getMms()-dlast.getMmm();
+        double ms_mm2 = dsecond.getMms()-dsecond.getMmm();
+        double ms_mm5 = dfive.getMms()-dfive.getMmm();
+        if(ms_mm1>0 && ms_mm2>0 && ms_mm5>0){
+            if(ms_mm1>=ms_mm2 && ms_mm2>=ms_mm5){
+                weight+=0.4;
+            }else if(ms_mm1<ms_mm2 && ms_mm2<ms_mm5){
+                weight +=0.05;
+            }else if(ms_mm1<ms_mm2)
+                weight += 0.05;
+            else
+                weight += 0.2;
+        }else if(ms_mm1>0 && ms_mm2<0 && ms_mm5>0){
+            if(ms_mm1>ms_mm5)
+                weight += 0.2;
+            else if(ms_mm1<ms_mm5)
+                weight += 0.05;
+        }else if(ms_mm1>0 && ms_mm2<0 && ms_mm5<0)
+            weight+= 0.15;
+        else
+            weight-=0.2;
+        //当日的mms mmm mml的差
+        if(ms_ml1>0 && ms_mm1>0 && mm_ml1>0)
+            weight +=0.3;
+        else if(ms_mm1>0)
+            weight +=0.1;
+        else if(ms_ml1<0 && mm_ml1<0 && ms_mm1<0)
+            weight -=0.3;
+        else if(ms_ml1<0)
+            weight-=0.1;
+        //macd
+        double dif1 = dlast.getDif();
+        double dea1 = dlast.getDea();
+        double macd1 = dlast.getMacd();
+        double dif2 = dlast.getDif();
+        double dea2 = dlast.getDea();
+        double macd2 = dlast.getMacd();
+        if(macd1>0 && macd1>=macd2){
+            if(macd2>0)
+                weight+=0.3;
+            else
+                weight+=0.15;
+        }
+        else if(macd2>macd1 && macd1>=0)
+            weight-=0.05;
+        else if(macd2>=0 && macd1<0)
+            weight-=1d;
+        else if(macd2>macd1 && macd2<0)
+            weight-=0.5;
+        else if(macd1<0 && macd1>=macd2)
+            weight+=0.1;
+
+        if(dif1>0&& dif2>0 && dea1>0 && dea2>0)
+            weight+=0.1;
+        else if(dif1>0 && dea1>0)
+            weight+=0.05;
+        else if(dif1<0 && dif2<0 && dea1<0 && dea2<0)
+            weight-=0.1;
+
+        return getNumDouble(weight);
+    }
     //计算公式
     //LC :=REF(CLOSE,1);
     //RSI2:=SMA(MAX(CLOSE-LC,0),12,1)/SMA(ABS(CLOSE-LC),12,1)*100;

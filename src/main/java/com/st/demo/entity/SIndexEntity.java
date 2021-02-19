@@ -30,6 +30,7 @@ public class SIndexEntity {
     Double mms;
     Double mml;
     Double mmm;
-    Double avgvatur;
+    Double avgvatur; //平均股票成交额
+    Double avgotur; //平均股票成交量
     Double weight;
 }
