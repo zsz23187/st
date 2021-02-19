@@ -1,5 +1,6 @@
 package com.st.demo.util;
 
+import com.st.demo.entity.SIndexEntity;
 import com.st.demo.entity.SinfoEntity;
 
 import java.io.File;
@@ -403,7 +404,7 @@ public class CommUtil {
      * @param langnum  macd的长日期 26
      * @param mid      macd的平均日，一般为9
      * @param t        交易日
-     * @param maxn     从数据的第n天开始统计
+     * @param maxn     从数据的倒数第n天开始统计
      */
     public static void method5(List<List<SinfoEntity>> rlist, int shortnum, int langnum,
                                int mid, int t, int maxn) {
@@ -418,49 +419,89 @@ public class CommUtil {
             e.printStackTrace();
         }
         List<String> outText = new ArrayList<>();
-        PrintWriter pw = new PrintWriter(fw);
-        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50");
+
+        //每个股票的指标数据，作为选股条件
+        List<List<SIndexEntity>> sindexList = new ArrayList<>();
 //        pw.println("代码,名称,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,幅度");
         for (int i = 0; i < rlist.size(); i++) {
-
+            List<SIndexEntity> indexList = new ArrayList<>();
             List<Map<String, Double>> macd = new ArrayList<>();
             List<Double> boll = new ArrayList<>();
-            List<SinfoEntity> slist = rlist.get(i);
             List<Double[]> zlmm = new ArrayList<>();
             List<Double> ema12 = new ArrayList<>();
             List<Double> ema50 = new ArrayList<>();
+            List<Double> avgVatur = new ArrayList<>(); //n日交易额平均值
+            List<SinfoEntity> slist = rlist.get(i);
 
+            maxn = slist.size() - maxn;
             //最近27日的收盘价
-            for (int j = 0; j < slist.size(); j++) {
+            for (int j = maxn; j < slist.size(); j++) {
                 List<Double> closeList = new ArrayList<>();
                 for (int k = 0; k <= j; k++) {
                     closeList.add(slist.get(k).getSclose());
                 }
-                String so = "";
-                so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
-                        slist.get(j).getStime() + ",";
+//                String so = "";
+//                so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
+//                        slist.get(j).getStime() + ",";
                 macd.add(getMACD(closeList, shortnum, langnum, mid));
                 zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 21));
+                avgVatur.add(getMA(closeList, 12));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
-                so += getNumFormat(macd.get(j).get("DIF"))
-                        + "," + getNumFormat(macd.get(j).get("DEA"))
-                        + "," + getNumFormat(macd.get(j).get("MACD"));
-                so += "," + getNumFormat(zlmm.get(j)[0])
-                        + "," + getNumFormat(zlmm.get(j)[1])
-                        + "," + getNumFormat(zlmm.get(j)[2]);
-                so += "," + getNumFormat(boll.get(j));
-                so += "," + getNumFormat(ema12.get(j));
-                so += "," + getNumFormat(ema50.get(j));
-                outText.add(so);
+//                so += getNumFormat(macd.get(j - maxn).get("DIF"))
+//                        + "," + getNumFormat(macd.get(j - maxn).get("DEA"))
+//                        + "," + getNumFormat(macd.get(j - maxn).get("MACD"));
+//                so += "," + getNumFormat(zlmm.get(j - maxn)[0])
+//                        + "," + getNumFormat(zlmm.get(j - maxn)[1])
+//                        + "," + getNumFormat(zlmm.get(j - maxn)[2]);
+//                so += "," + getNumFormat(boll.get(j - maxn));
+//                so += "," + getNumFormat(ema12.get(j - maxn));
+//                so += "," + getNumFormat(ema50.get(j - maxn));
+//                outText.add(so);
+                //统计每个股票最近maxn天的指标信息
+                SIndexEntity sindex = copySinfo(slist.get(j - maxn));
+                sindex.setMacd(getNumDouble(macd.get(j - maxn).get("MACD")));
+                sindex.setDif(getNumDouble(macd.get(j - maxn).get("DIF")));
+                sindex.setDea(getNumDouble(macd.get(j - maxn).get("DEA")));
+                sindex.setEma12(getNumDouble(ema12.get(j - maxn)));
+                sindex.setEma50(getNumDouble(ema50.get(j - maxn)));
+                sindex.setBoll(getNumDouble(boll.get(j - maxn)));
+                sindex.setMms(getNumDouble(zlmm.get(j - maxn)[0]));
+                sindex.setMmm(getNumDouble(zlmm.get(j - maxn)[1]));
+                sindex.setMml(getNumDouble(zlmm.get(j - maxn)[2]));
+                sindex.setAvgvatur(getNumDouble(avgVatur.get(j - maxn)));
+                indexList.add(sindex);
             }
-//            for (int j = 0; j < macd.size(); j++) {
-//                outText.add("DIF," +getNumFormat(macd.get(j).get("DIF"))
-//                +",DEA," + getNumFormat(macd.get(j).get("DEA"))
-//                +",MACD," + getNumFormat(macd.get(j).get("MACD")));
-//            }
+            sindexList.add(indexList);
         }
+        //开始选股，第一步只选最后一天符合要求
+        List<List<SIndexEntity>> okStock = new ArrayList<>();
+        for (int i = 0; i < sindexList.size(); i++) { //每个股票
+            List<SIndexEntity> ilist = sindexList.get(i);
+            int tday = ilist.size() - 1;
+            //如果12日ema<50日ema 去掉
+            if (ilist.get(tday).getEma12() >= ilist.get(tday).getEma50()) {
+                if (ilist.get(tday - 2).getShigh() <= ilist.get(tday).getBoll()) {
+                    if (ilist.get(tday).getSopen() > ilist.get(tday).getBoll() && ilist.get(tday).getSclose() < ilist.get(tday).getBoll()) {
+                        okStock.add(ilist);
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < okStock.size(); i++) {
+            String os = "";
+            SIndexEntity dlast = okStock.get(i).get(okStock.get(i).size()-1);
+            SIndexEntity dsecond = okStock.get(i).get(okStock.get(i).size()-2);
+            os+=dlast.getScode()+","+dlast.getSname()+","+dlast.getStime()+",";
+            os+=dlast.getDif()+","+dlast.getDea()+","+dlast.getMacd()+",";
+            os+=dlast.getMms()+","+dlast.getMmm()+","+dlast.getMml()+",";
+            os+=dlast.getBoll()+","+dlast.getEma12()+","+dlast.getEma50();
+            outText.add(os);
+        }
+
+        PrintWriter pw = new PrintWriter(fw);
+        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50");
         for (String s : outText) {
             pw.println(s);
         }
@@ -492,9 +533,9 @@ public class CommUtil {
             List<Double> absCloseList = new ArrayList<>();
             List<Double> sublist = slist.subList(0, slist.size() - i);
             for (int k = 0; k < sublist.size(); k++) {
-                if (k == 0) {
-                    maxCloseList.add(0d);
-                    absCloseList.add(0d);
+                if (k == 0) { //数据不是从第一天开始就不能统计0
+//                    maxCloseList.add(0d);
+//                    absCloseList.add(0d);
                 } else {
                     double lc = slist.get(k - 1);
                     double max = maxNum(slist.get(k) - lc, 0d);
@@ -503,7 +544,7 @@ public class CommUtil {
                     absCloseList.add(abs);
                 }
             }
-            if (maxCloseList.size() > 0 && absCloseList.size() > 0 && sublist.size()>1) {
+            if (maxCloseList.size() > 0 && absCloseList.size() > 0) { //&& sublist.size()>1 数据从第一天开始的条件
                 double si2 = getSMA(maxCloseList, 12) / getSMA(absCloseList, 12) * 100;
                 double si3 = getSMA(maxCloseList, 18) / getSMA(absCloseList, 18) * 100;
                 rsi2.add(3 * si2 - 2 * getSMA(maxCloseList, 16) / getSMA(absCloseList, 16) * 100);
@@ -562,5 +603,31 @@ public class CommUtil {
         BigDecimal b = new BigDecimal(d);
         double f1 = b.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
         return String.valueOf(f1);
+    }
+
+    public static Double getNumDouble(double d) {
+        BigDecimal b = new BigDecimal(d);
+        double f1 = b.setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        return f1;
+    }
+
+    public static SIndexEntity copySinfo(SinfoEntity sinfo) {
+        SIndexEntity re = new SIndexEntity();
+        re.setId(sinfo.getId());
+        re.setTcode(sinfo.getTcode());
+        re.setTtime(sinfo.getTtime());
+        re.setStime(sinfo.getStime());
+        re.setScode(sinfo.getScode());
+        re.setSname(sinfo.getSname());
+        re.setSclose(sinfo.getSclose());
+        re.setShigh(sinfo.getShigh());
+        re.setSlow(sinfo.getSlow());
+        re.setSopen(sinfo.getSopen());
+        re.setSchg(sinfo.getSchg());
+        re.setSpchg(sinfo.getSpchg());
+        re.setSurnover(sinfo.getSurnover());
+        re.setSotur(sinfo.getSotur());
+        re.setSvatur(sinfo.getSvatur());
+        return re;
     }
 }

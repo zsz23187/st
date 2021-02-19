@@ -549,11 +549,15 @@ public class GetSlistController {
             int beg = jso.getBeg();
             int end = jso.getEnd();
             int num = jso.getNum();
+            int maxn = jso.getMaxn();
             List<List<SinfoEntity>> reList = new ArrayList<>();
             List<SlistEntity> slList = slistService.findAll();
 
             //最近num天数据
-            List<SinfoEntity> stList = sinfoService.findByCodeTime("002971",beg,end); //findByTime(beg, end);
+//            List<SinfoEntity> stList = sinfoService.findByCodeTime("002971",beg,end); //findByTime(beg, end);
+//            reList.add(stList);
+            //method2
+//            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
 //            for (int j = 0; j < slList.size(); j++) {
 //                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
 //                int finalJ = j;
@@ -563,10 +567,17 @@ public class GetSlistController {
 //                    reList.add(ssl);
 //                }
 //            }
-            reList.add(stList);
-            if (reList.size() < 10000)
-                CommUtil.method5(reList,12,26,9,1,50);
-
+            //method2
+            //method3
+            for (int i = 0; i < slList.size(); i++) {
+                List<SinfoEntity> selist = sinfoService.findByCodeTime(slList.get(i).getScode(),beg,end);
+                if (null != selist && selist.size() > num - 1) {
+                    reList.add(selist);
+                }
+            }
+            //method3
+            if (reList.size() < 10000 && reList.size()>0)
+                CommUtil.method5(reList,12,26,9,1,maxn);
 
             System.out.println("完了");
         } catch (Exception e) {
@@ -581,5 +592,6 @@ public class GetSlistController {
         Integer beg;
         Integer end;
         Integer num;
+        Integer maxn;
     }
 }
