@@ -461,7 +461,7 @@ public class CommUtil {
                 so += "," + getNumFormat(boll.get(j - maxn));
                 so += "," + getNumFormat(ema12.get(j - maxn));
                 so += "," + getNumFormat(ema50.get(j - maxn));
-                outText.add(so);
+//                outText.add(so);
                 //统计每个股票最近maxn天的指标信息
                 SIndexEntity sindex = copySinfo(slist.get(j));
                 sindex.setMacd(getNumDouble(macd.get(j - maxn).get("MACD")));
