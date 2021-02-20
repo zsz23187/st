@@ -32,5 +32,7 @@ public class SIndexEntity {
     Double mmm;
     Double avgvatur; //平均股票成交额
     Double avgotur; //平均股票成交量
-    Double weight;
+    Double weight = -10d; //经过计算得到的股票权重
+    Boolean isok = false; //true=符合条件的股票
+    Integer lot = 0; //当前股票购买的手数
 }

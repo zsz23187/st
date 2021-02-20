@@ -395,19 +395,16 @@ public class CommUtil {
     //第二天开盘价<前日的expma12最好，小于expma50也可
     //直接开盘买
 
-
-    //生成文本文件
-
     /**
      * @param rlist
      * @param shortnum macd的短日期 12
      * @param langnum  macd的长日期 26
      * @param mid      macd的平均日，一般为9
      * @param t        交易日
-     * @param maxn     从数据的倒数第n天开始统计
+     * @param tnum     从数据的倒数第n天开始统计
      */
     public static void method5(List<List<SinfoEntity>> rlist, int shortnum, int langnum,
-                               int mid, int t, int maxn) {
+                               int mid, int t, int tnum) {
         FileWriter fw = null;
         try {
 //如果文件存在，则追加内容；如果文件不存在，则创建文件
@@ -424,7 +421,7 @@ public class CommUtil {
         List<List<SIndexEntity>> sindexList = new ArrayList<>();
 //        pw.println("代码,名称,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,幅度");
         for (int i = 0; i < rlist.size(); i++) {
-            System.out.println("开始分析-"+i);
+            System.out.println("开始分析-" + i);
             List<SIndexEntity> indexList = new ArrayList<>();
             List<Map<String, Double>> macd = new ArrayList<>();
             List<Double> boll = new ArrayList<>();
@@ -435,7 +432,7 @@ public class CommUtil {
             List<Double> avgotur = new ArrayList<>(); //n日交易量平均值
             List<SinfoEntity> slist = rlist.get(i);
 
-            maxn = slist.size() - maxn;
+            int maxn = slist.size() - tnum;
             //最近27日的收盘价
             for (int j = maxn; j < slist.size(); j++) {
                 List<Double> closeList = new ArrayList<>();
@@ -449,7 +446,7 @@ public class CommUtil {
                 zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 21));
                 avgVatur.add(getMA(closeList, 12));
-                avgotur.add(getMA(closeList,12));
+                avgotur.add(getMA(closeList, 12));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
                 so += getNumFormat(macd.get(j - maxn).get("DIF"))
@@ -474,13 +471,55 @@ public class CommUtil {
                 sindex.setMmm(getNumDouble(zlmm.get(j - maxn)[1]));
                 sindex.setMml(getNumDouble(zlmm.get(j - maxn)[2]));
                 sindex.setAvgvatur(getNumDouble(avgVatur.get(j - maxn)));
+                sindex.setAvgotur(getNumDouble(avgotur.get(j - maxn)));
                 indexList.add(sindex);
             }
             sindexList.add(indexList);
         }
+        rlist = null;
         System.out.println("开始选股");
-        //开始选股，第一步只选最后一天符合要求
+        //开始选股，一定时间内每天符合条件的都选出来
+        /*
         List<List<SIndexEntity>> okStock = new ArrayList<>();
+        for (int i = 4; i < tnum; i++) {
+            List<SIndexEntity> dayList = new ArrayList<>(); //每天的满足条件的股票
+            for (int j = 0; j < sindexList.size(); j++) {
+                List<SIndexEntity> ilist = sindexList.get(j);
+                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+                    if (ilist.get(i - 2).getShigh() <= ilist.get(i).getBoll() * 1.05) {
+                        if (ilist.get(i).getSopen() > ilist.get(i).getBoll() && ilist.get(i).getSclose() < ilist.get(i).getBoll()) {
+                            ilist.get(i).setIsok(true);
+                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));
+                            dayList.add(ilist.get(i));
+                        }
+                    }
+                }
+            }
+            okStock.add(dayList);
+        }
+        //www.wewestar.com/thread-293597...https://www.baidu.com/link?url=MXOkrLoCWVuP2kzp4pQNF7mCqE36RPTtA27FD4xYjWHWBSfd5sTkZWGR4OxvtBNxO6nKSsYSHzBMoKSom429a_&wd=&eqid=f61c30f70000357d00000003602f6a39
+        for (int i = 0; i < okStock.size(); i++) { //每天的符合条件的股票
+            String os = "";
+//            System.out.println("day "+i);
+            List<SIndexEntity> dayList = okStock.get(i);
+            for (int j = 0; j < dayList.size(); j++) {
+                SIndexEntity dlast = dayList.get(j);
+//                System.out.println("code "+dlast.getScode());
+                os += dlast.getScode() + "," + dlast.getSname() + "," + dlast.getStime() + ",";
+                os += dlast.getDif() + "," + dlast.getDea() + "," + dlast.getMacd() + ",";
+                os += dlast.getMms() + "," + dlast.getMmm() + "," + dlast.getMml() + ",";
+                os += dlast.getBoll() + "," + dlast.getEma12() + "," + dlast.getEma50();
+                os += "," + dlast.getWeight();
+                outText.add(os);
+            }
+        }*/
+        //----------一定时间的选股方法结束-----------
+        //模拟买卖,包括选股票
+        simulateMM(tnum,sindexList,outText);
+        //模拟买卖结束
+        //开始选股，第一步只选最后一天符合要求
+        /*
+        List<List<SIndexEntity>> okStocks = new ArrayList<>();
         for (int i = 0; i < sindexList.size(); i++) { //每个股票
             List<SIndexEntity> ilist = sindexList.get(i);
             int tday = ilist.size() - 1;
@@ -488,15 +527,15 @@ public class CommUtil {
             if (ilist.get(tday).getEma12() >= ilist.get(tday).getEma50()) {
                 if (ilist.get(tday - 2).getShigh() <= ilist.get(tday).getBoll()*1.05) {
                     if (ilist.get(tday).getSopen() > ilist.get(tday).getBoll() && ilist.get(tday).getSclose() < ilist.get(tday).getBoll()) {
-                        okStock.add(ilist);
+                        okStocks.add(ilist);
                     }
                 }
             }
         }
         //www.wewestar.com/thread-293597...https://www.baidu.com/link?url=MXOkrLoCWVuP2kzp4pQNF7mCqE36RPTtA27FD4xYjWHWBSfd5sTkZWGR4OxvtBNxO6nKSsYSHzBMoKSom429a_&wd=&eqid=f61c30f70000357d00000003602f6a39
-        for (int i = 0; i < okStock.size(); i++) {
+        for (int i = 0; i < okStocks.size(); i++) {
             String os = "";
-            SIndexEntity dlast = okStock.get(i).get(okStock.get(i).size() - 1);
+            SIndexEntity dlast = okStocks.get(i).get(okStocks.get(i).size() - 1);
             System.out.println("code "+dlast.getScode());
             os += dlast.getScode() + "," + dlast.getSname() + "," + dlast.getStime() + ",";
             os += dlast.getDif() + "," + dlast.getDea() + "," + dlast.getMacd() + ",";
@@ -504,10 +543,12 @@ public class CommUtil {
             os += dlast.getBoll() + "," + dlast.getEma12() + "," + dlast.getEma50();
             //计算权重
             double weight = 0d;
-            weight = calWeight(okStock.get(i));
+            weight = calWeight(okStocks.get(i));
             os+=","+weight;
             outText.add(os);
         }
+         */
+        //----------最后一天的选股方法结束-----------
         System.out.println("开始输出");
         PrintWriter pw = new PrintWriter(fw);
         pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50,权重");
@@ -525,128 +566,128 @@ public class CommUtil {
     }
 
     //计算一个股票当日的权重
-    public static Double calWeight(List<SIndexEntity> slist){
+    public static Double calWeight(List<SIndexEntity> slist) {
         SIndexEntity dlast = slist.get(slist.size() - 1);
         SIndexEntity dsecond = slist.get(slist.size() - 2);
         SIndexEntity dfive = slist.get(0);
         double weight = 0d;
         //最重要的还是看大趋势，2天的小趋势不可靠
-        double emac1 = dlast.getEma12()-dlast.getEma50();
-        double emac2 = dsecond.getEma12()-dsecond.getEma50();
+        double emac1 = dlast.getEma12() - dlast.getEma50();
+        double emac2 = dsecond.getEma12() - dsecond.getEma50();
         //5天的ema趋势
-        double emac5 = dfive.getEma12()-dfive.getEma50();
-        if(emac1>emac2 && emac2>emac5)
-            weight+=0.3;
-        else if(emac1>emac2 && emac2 <=emac5)
-            weight+=0.15;
-        else if(emac1>emac5)
-            weight+=0.1;
-        else if(emac5>emac2 && emac2>emac1)
-            weight -=0.3;
-        else if(emac2>emac1)
-            weight -=0.1;
+        double emac5 = dfive.getEma12() - dfive.getEma50();
+        if (emac1 > emac2 && emac2 > emac5)
+            weight += 0.3;
+        else if (emac1 > emac2 && emac2 <= emac5)
+            weight += 0.15;
+        else if (emac1 > emac5)
+            weight += 0.1;
+        else if (emac5 > emac2 && emac2 > emac1)
+            weight -= 0.3;
+        else if (emac2 > emac1)
+            weight -= 0.1;
 //            zlmm曲线走向
-        double ms1 = dlast.getMms()-dsecond.getMms();
-        double ms2 = dsecond.getMms()-dfive.getMms();
-        if(ms1>0 && ms2 > 0){
-            if(ms1>ms2)
-                weight +=0.2;
+        double ms1 = dlast.getMms() - dsecond.getMms();
+        double ms2 = dsecond.getMms() - dfive.getMms();
+        if (ms1 > 0 && ms2 > 0) {
+            if (ms1 > ms2)
+                weight += 0.2;
             else
-                weight+=0.1;
-        }else if(ms1>0 && ms2<0){
-            weight +=0.1;
-        }else if(ms1<0 && ms2<0)
-            weight -=0.2;
-        double mm1 = dlast.getMmm()-dsecond.getMmm();
-        double mm2 = dsecond.getMmm()-dfive.getMmm();
-        if(mm1>0 && mm2 > 0){
-            if(mm1>mm2)
-                weight +=0.15;
+                weight += 0.1;
+        } else if (ms1 > 0 && ms2 < 0) {
+            weight += 0.1;
+        } else if (ms1 < 0 && ms2 < 0)
+            weight -= 0.2;
+        double mm1 = dlast.getMmm() - dsecond.getMmm();
+        double mm2 = dsecond.getMmm() - dfive.getMmm();
+        if (mm1 > 0 && mm2 > 0) {
+            if (mm1 > mm2)
+                weight += 0.15;
             else
-                weight+=0.05;
-        }else if(mm1>0 && mm2<0){
-            weight +=0.05;
-        }else if(mm1<0 && mm2<0)
-            weight -=0.1;
+                weight += 0.05;
+        } else if (mm1 > 0 && mm2 < 0) {
+            weight += 0.05;
+        } else if (mm1 < 0 && mm2 < 0)
+            weight -= 0.1;
 //        double ml1 = dlast.getMml()-dsecond.getMml();
 //        double ml2 = dsecond.getMml()-dfive.getMml();
         //mms-mml
-        double ms_ml1 = dlast.getMms()-dlast.getMml();
-        double ms_ml2 = dsecond.getMms()-dsecond.getMml();
-        double ms_ml5 = dfive.getMms()-dfive.getMml();
-        if(ms_ml1>0 && ms_ml2>0 && ms_ml5>0){
-            if(ms_ml1>=ms_ml2 && ms_ml2>=ms_ml5){
-                weight+=0.4;
-            }else if(ms_ml1<ms_ml2 && ms_ml2<ms_ml5){
-                weight +=0.05;
-            }else if(ms_ml1<ms_ml2)
+        double ms_ml1 = dlast.getMms() - dlast.getMml();
+        double ms_ml2 = dsecond.getMms() - dsecond.getMml();
+        double ms_ml5 = dfive.getMms() - dfive.getMml();
+        if (ms_ml1 > 0 && ms_ml2 > 0 && ms_ml5 > 0) {
+            if (ms_ml1 >= ms_ml2 && ms_ml2 >= ms_ml5) {
+                weight += 0.4;
+            } else if (ms_ml1 < ms_ml2 && ms_ml2 < ms_ml5) {
+                weight += 0.05;
+            } else if (ms_ml1 < ms_ml2)
                 weight += 0.05;
             else
                 weight += 0.2;
-        }else if(ms_ml1>0 && ms_ml2<0 && ms_ml5>0){
-            if(ms_ml1>ms_ml5)
+        } else if (ms_ml1 > 0 && ms_ml2 < 0 && ms_ml5 > 0) {
+            if (ms_ml1 > ms_ml5)
                 weight += 0.2;
-            else if(ms_ml1<ms_ml5)
+            else if (ms_ml1 < ms_ml5)
                 weight += 0.05;
-        }else if(ms_ml1>0 && ms_ml2<0 && ms_ml5<0)
-            weight+= 0.15;
-        else if(ms_ml1>ms_ml2)
-            weight+=0.1;
+        } else if (ms_ml1 > 0 && ms_ml2 < 0 && ms_ml5 < 0)
+            weight += 0.15;
+        else if (ms_ml1 > ms_ml2)
+            weight += 0.1;
         else
-            weight-=0.2;
+            weight -= 0.2;
         //mmm-mml
-        double mm_ml1 = dlast.getMmm()-dlast.getMml();
-        double mm_ml2 = dsecond.getMmm()-dsecond.getMml();
-        double mm_ml5 = dfive.getMmm()-dfive.getMml();
-        if(mm_ml1>0 && mm_ml2>0 && mm_ml5>0){
-            if(mm_ml1>=mm_ml2 && mm_ml2>=mm_ml5){
-                weight+=0.4;
-            }else if(mm_ml1<mm_ml2 && mm_ml2<mm_ml5){
-                weight +=0.05;
-            }else if(mm_ml1<mm_ml2)
+        double mm_ml1 = dlast.getMmm() - dlast.getMml();
+        double mm_ml2 = dsecond.getMmm() - dsecond.getMml();
+        double mm_ml5 = dfive.getMmm() - dfive.getMml();
+        if (mm_ml1 > 0 && mm_ml2 > 0 && mm_ml5 > 0) {
+            if (mm_ml1 >= mm_ml2 && mm_ml2 >= mm_ml5) {
+                weight += 0.4;
+            } else if (mm_ml1 < mm_ml2 && mm_ml2 < mm_ml5) {
+                weight += 0.05;
+            } else if (mm_ml1 < mm_ml2)
                 weight += 0.05;
             else
                 weight += 0.2;
-        }else if(mm_ml1>0 && mm_ml2<0 && mm_ml5>0){
-            if(mm_ml1>mm_ml5)
+        } else if (mm_ml1 > 0 && mm_ml2 < 0 && mm_ml5 > 0) {
+            if (mm_ml1 > mm_ml5)
                 weight += 0.2;
-            else if(mm_ml1<mm_ml5)
+            else if (mm_ml1 < mm_ml5)
                 weight += 0.05;
-        }else if(mm_ml1>0 && mm_ml2<0 && mm_ml5<0)
-            weight+= 0.15;
+        } else if (mm_ml1 > 0 && mm_ml2 < 0 && mm_ml5 < 0)
+            weight += 0.15;
         else
-            weight-=0.2;
+            weight -= 0.2;
         //mms-mmm 
-        double ms_mm1 = dlast.getMms()-dlast.getMmm();
-        double ms_mm2 = dsecond.getMms()-dsecond.getMmm();
-        double ms_mm5 = dfive.getMms()-dfive.getMmm();
-        if(ms_mm1>0 && ms_mm2>0 && ms_mm5>0){
-            if(ms_mm1>=ms_mm2 && ms_mm2>=ms_mm5){
-                weight+=0.4;
-            }else if(ms_mm1<ms_mm2 && ms_mm2<ms_mm5){
-                weight +=0.05;
-            }else if(ms_mm1<ms_mm2)
+        double ms_mm1 = dlast.getMms() - dlast.getMmm();
+        double ms_mm2 = dsecond.getMms() - dsecond.getMmm();
+        double ms_mm5 = dfive.getMms() - dfive.getMmm();
+        if (ms_mm1 > 0 && ms_mm2 > 0 && ms_mm5 > 0) {
+            if (ms_mm1 >= ms_mm2 && ms_mm2 >= ms_mm5) {
+                weight += 0.4;
+            } else if (ms_mm1 < ms_mm2 && ms_mm2 < ms_mm5) {
+                weight += 0.05;
+            } else if (ms_mm1 < ms_mm2)
                 weight += 0.05;
             else
                 weight += 0.2;
-        }else if(ms_mm1>0 && ms_mm2<0 && ms_mm5>0){
-            if(ms_mm1>ms_mm5)
+        } else if (ms_mm1 > 0 && ms_mm2 < 0 && ms_mm5 > 0) {
+            if (ms_mm1 > ms_mm5)
                 weight += 0.2;
-            else if(ms_mm1<ms_mm5)
+            else if (ms_mm1 < ms_mm5)
                 weight += 0.05;
-        }else if(ms_mm1>0 && ms_mm2<0 && ms_mm5<0)
-            weight+= 0.15;
+        } else if (ms_mm1 > 0 && ms_mm2 < 0 && ms_mm5 < 0)
+            weight += 0.15;
         else
-            weight-=0.2;
+            weight -= 0.2;
         //当日的mms mmm mml的差
-        if(ms_ml1>0 && ms_mm1>0 && mm_ml1>0)
-            weight +=0.3;
-        else if(ms_mm1>0)
-            weight +=0.1;
-        else if(ms_ml1<0 && mm_ml1<0 && ms_mm1<0)
-            weight -=0.3;
-        else if(ms_ml1<0)
-            weight-=0.1;
+        if (ms_ml1 > 0 && ms_mm1 > 0 && mm_ml1 > 0)
+            weight += 0.3;
+        else if (ms_mm1 > 0)
+            weight += 0.1;
+        else if (ms_ml1 < 0 && mm_ml1 < 0 && ms_mm1 < 0)
+            weight -= 0.3;
+        else if (ms_ml1 < 0)
+            weight -= 0.1;
         //macd
         double dif1 = dlast.getDif();
         double dea1 = dlast.getDea();
@@ -654,31 +695,31 @@ public class CommUtil {
         double dif2 = dlast.getDif();
         double dea2 = dlast.getDea();
         double macd2 = dlast.getMacd();
-        if(macd1>0 && macd1>=macd2){
-            if(macd2>0)
-                weight+=0.3;
+        if (macd1 > 0 && macd1 >= macd2) {
+            if (macd2 > 0)
+                weight += 0.3;
             else
-                weight+=0.15;
-        }
-        else if(macd2>macd1 && macd1>=0)
-            weight-=0.05;
-        else if(macd2>=0 && macd1<0)
-            weight-=1d;
-        else if(macd2>macd1 && macd2<0)
-            weight-=0.5;
-        else if(macd1<0 && macd1>=macd2)
-            weight+=0.1;
+                weight += 0.15;
+        } else if (macd2 > macd1 && macd1 >= 0)
+            weight -= 0.05;
+        else if (macd2 >= 0 && macd1 < 0)
+            weight -= 1d;
+        else if (macd2 > macd1 && macd2 < 0)
+            weight -= 0.5;
+        else if (macd1 < 0 && macd1 >= macd2)
+            weight += 0.1;
 
-        if(dif1>0&& dif2>0 && dea1>0 && dea2>0)
-            weight+=0.1;
-        else if(dif1>0 && dea1>0)
-            weight+=0.05;
-        else if(dif1<0 && dif2<0 && dea1<0 && dea2<0)
-            weight-=0.1;
+        if (dif1 > 0 && dif2 > 0 && dea1 > 0 && dea2 > 0)
+            weight += 0.1;
+        else if (dif1 > 0 && dea1 > 0)
+            weight += 0.05;
+        else if (dif1 < 0 && dif2 < 0 && dea1 < 0 && dea2 < 0)
+            weight -= 0.1;
 
         return getNumDouble(weight);
     }
-    //计算公式
+
+    //计算主力买卖指标公式
     //LC :=REF(CLOSE,1);
     //RSI2:=SMA(MAX(CLOSE-LC,0),12,1)/SMA(ABS(CLOSE-LC),12,1)*100;
     //RSI3:=SMA(MAX(CLOSE-LC,0),18,1)/SMA(ABS(CLOSE-LC),18,1)*100;
@@ -798,5 +839,158 @@ public class CommUtil {
         re.setSotur(sinfo.getSotur());
         re.setSvatur(sinfo.getSvatur());
         return re;
+    }
+
+    public static void simulateMM(int tnum, List<List<SIndexEntity>> sindexList, List<String> tradeInfo) {
+        //计算所有股票在每天是否符合条件，符合的isok设为true，并设置权重
+//        List<String> tradeInfo = new ArrayList<>();// 每一笔交易的记录
+        for (int j = 0; j < sindexList.size(); j++) {
+            List<SIndexEntity> ilist = sindexList.get(j);
+            for (int i = 4; i < tnum; i++) { //按天循环每个股票，从第5天开始
+                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+                    if (ilist.get(i - 2).getShigh() <= ilist.get(i).getBoll() * 1.05) {
+                        if (ilist.get(i).getSopen() > ilist.get(i).getBoll() && ilist.get(i).getSclose() < ilist.get(i).getBoll()) {
+                            ilist.get(i).setIsok(true);
+                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));
+                        }
+                    }
+                }
+            }
+        }
+        // //代码,名称,交易日期,权重,状态,开盘价,买入价,手数,总价
+        tradeInfo.add("代码,名称,交易日期,权重,开盘价,状态,买卖价,手数,总价");
+        //开始进行买卖，每天进行循环
+        int status1 = 1; //1=当天买入，0=当天卖出,开始之前为当天买入
+        double money1 = 100000d;
+        int status2 = 1;
+        double money2 = 100000d;
+        for (int i = 4; i < tnum - 2; i++) {
+            int scount = 0; //权重大于0的股票
+            int smcount = 0; //权重小于0但大于-0.6的股票
+            //计算每天满足条件的股票数量
+            for (int j = 0; j < sindexList.size(); j++) {
+                List<SIndexEntity> ilist = sindexList.get(j);
+                if (ilist.get(i).getIsok()) {
+                    if (ilist.get(i).getWeight() >= 0d)
+                        scount++;
+                    else if (ilist.get(i).getWeight() > -1d)
+                        smcount++;
+                }
+            }
+
+            if(status1 == 1) { //资金1当日可以买
+                if(scount>0){
+                    money1 = dayBuy(money1,tradeInfo,sindexList,i,scount,0d);
+                }else if(smcount>0){
+                    money1 = dayBuy(money1,tradeInfo,sindexList,i,smcount,-0.9d);
+                }
+                status1 = 0;
+            }else{ //资金1当天可以卖
+                money1 = daySell(money1,tradeInfo,sindexList,i);
+                status1 = 1; //转为买入状态
+            }
+            if(status2 == 1 && status1 == 1){ //资金2当日可以买，且资金1没有买
+                if(scount>0){
+                    money2 = dayBuy(money2,tradeInfo,sindexList,i,scount,0d);
+                }else if(smcount>0){
+                    money2 = dayBuy(money2,tradeInfo,sindexList,i,smcount,-0.9d);
+                }
+                status2 = 0;
+            }else if(status2 == 0){
+                money2 = daySell(money2,tradeInfo,sindexList,i);
+            }
+//            if (scount > 0) {
+//                if (status1 == 1) {//status1 处于当日买入状态，
+//                    money1 = dayBuy(money1,tradeInfo,sindexList,i,scount,0d);
+//                    status1 = 0; //转为卖出状态
+//                }
+//                //status2 处于当日买入状态
+//                if (status2 == 1 && status1 == 1) { //第二笔初始资金当日买入，且不和第一笔同时买卖
+//                    money2 = dayBuy(money2,tradeInfo,sindexList,i,scount,0d);
+//                    status2 = 0; //转为卖出状态
+//                }
+//            } else if(smcount>0){ //如果一个也没有,找权重小于0大于-0.6的
+//                if (status1 == 1) {//status1 处于当日买入状态，
+//                    money1 = dayBuy(money1,tradeInfo,sindexList,i,smcount,-0.9d);
+//                    status1 = 0; //转为卖出状态
+//                }
+//                //status2 处于当日买入状态
+//                if (status2 == 1 && i > 4) { //第二笔初始资金在第二天开始参与买卖
+//                    money2 = dayBuy(money2,tradeInfo,sindexList,i,smcount,-0.9d);
+//                    status2 = 0; //转为卖出状态
+//                }
+//            } //权重低的不考虑
+//            //每天先进行卖出，不管有没有可以卖的
+//            //卖出和股票符合条件无关
+//            if (status1 == 0) {//status1 处于当日卖出状态，
+//                //如果处于当日卖出状态 则卖出
+//                money1 = daySell(money1,tradeInfo,sindexList,i);
+//                status1 = 1; //转为买入状态
+//            }
+//            if(status2 == 0){
+//                money2 = daySell(money2,tradeInfo,sindexList,i);
+//                status2 = 1; //转为买入状态
+//            }
+        }
+
+        //模拟结束，计算收入并输出
+        tradeInfo.add("资金1,"+money1+",盈利,"+getNumDouble(money1-100000d)+",百分比,"+getNumDouble((money1-100000d)/100000d));
+        tradeInfo.add("资金2,"+money2+",盈利,"+getNumDouble(money2-100000d)+",百分比,"+getNumDouble((money2-100000d)/100000d));
+    }
+
+    /**
+     *
+     * @param money1 总金额
+     * @param tradeInfo 交易记录
+     * @param sindexList 股票信息
+     * @param i 天数下标
+     * @param scount 要买的股票数量
+     * @param weight 股票的权重
+     * @return
+     */
+    public static Double dayBuy(double money1, List<String> tradeInfo,List<List<SIndexEntity>> sindexList,
+                               int i, int scount, double weight){
+        double dout1 = 0d;
+        double dmoney1 = money1 / scount;
+        for (int j = 0; j < sindexList.size(); j++) {
+            List<SIndexEntity> ilist = sindexList.get(j);
+            if (ilist.get(i).getIsok() && ilist.get(i).getWeight() >= weight) {
+                //每100股才能达成交易,买入价格高2分
+                double in = 0.02 + ilist.get(i + 1).getSopen();
+                int lot = new Double(dmoney1 / (in * 100)).intValue();
+                ilist.get(i + 1).setLot(lot);
+                dout1 += lot * in; //每天的总支出
+                SIndexEntity sie = ilist.get(i + 1);
+                //代码,名称,交易日期,权重,状态,开盘价,买入价,手数,总价
+                tradeInfo.add(sie.getScode() + "," + sie.getSname() + "," + sie.getStime() + "," +sie.getWeight()+","+
+                        sie.getSopen() + ",买入," + in + "," + lot + "," + getNumDouble(in * lot*100d));
+            }
+        }
+        money1 = money1 - dout1;
+        return money1;
+    }
+
+    public static Double daySell(double money1,List<String> tradeInfo, List<List<SIndexEntity>> sindexList,int i){
+        double din = 0d;
+        for (int j = 0; j < sindexList.size(); j++) {
+            List<SIndexEntity> ilist = sindexList.get(j);
+            if (ilist.get(i).getLot() > 0) { //这个股票有买入，则卖出
+                //如果第二天的开盘价小于买入的价格，等到收盘卖出，卖出价格低2分
+                double out = 0d;
+                if (ilist.get(i + 1).getSopen() < ilist.get(i).getSopen())
+                    out = ilist.get(i + 1).getSclose() - 0.02;
+                else
+                    out = ilist.get(i + 1).getSopen() - 0.02;
+                din += ilist.get(i).getLot() * out;
+                SIndexEntity sie = ilist.get(i + 1);
+                //代码,名称,交易日期,权重,开盘价,状态卖出价,手数,总价
+                tradeInfo.add(sie.getScode() + "," + sie.getSname() + "," + sie.getStime() + "," +sie.getWeight()+","+
+                        sie.getSopen() + ",卖出," +  + out + "," + ilist.get(i).getLot() + "," +
+                        getNumDouble(out * ilist.get(i).getLot()*100d));
+                ilist.get(i).setLot(0);
+            }
+        }
+        money1 = money1 + din;
+        return money1;
     }
 }
