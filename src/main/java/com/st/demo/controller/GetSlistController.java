@@ -550,6 +550,7 @@ public class GetSlistController {
             int end = jso.getEnd();
             int num = jso.getNum();
             int tnum = jso.getTnum();
+            int tsell = jso.getTsell();
             List<List<SinfoEntity>> reList = new ArrayList<>();
             List<SlistEntity> slList = slistService.findAll();
 
@@ -561,13 +562,15 @@ public class GetSlistController {
                 System.out.println(scode + " 长度不够");
             //method2
 //            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
-//            for (int j = 0; j < slList.size(); j++) {
+//            for (int j = 0; j < slList.size(); j++) { //slList.size()
 //                List<SinfoEntity> selist = new ArrayList<>(); //sinfoService.findByCodeTime(slList.get(j).getScode(), beg, end);
 //                int finalJ = j;
-//                selist = stList.stream().filter(f -> f.getScode().equals(slList.get(finalJ).getScode())).collect(Collectors.toList());
+//                selist = stList.stream().filter(f ->
+//                        f.getScode().equals(slList.get(finalJ).getScode())
+//                && !f.getSname().contains("ST")).collect(Collectors.toList());
 //                if (null != selist && selist.size() > num - 1) {
-//                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
-//                    reList.add(ssl);
+////                    List<SinfoEntity> ssl = selist.subList(selist.size() - num, selist.size());
+//                    reList.add(selist);
 //                }
 //            }
             //method2
@@ -580,7 +583,7 @@ public class GetSlistController {
 //            }
             //method3
             if (reList.size() < 10000 && reList.size() > 0)
-                CommUtil.method5(reList, 12, 26, 9, 1, tnum);
+                CommUtil.method5(reList, 12, 26, 9, tsell, tnum);
 
             System.out.println("完了");
         } catch (Exception e) {
@@ -597,5 +600,6 @@ public class GetSlistController {
         Integer end;
         Integer num;
         Integer tnum;
+        Integer tsell;
     }
 }
