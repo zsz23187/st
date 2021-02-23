@@ -436,8 +436,12 @@ public class CommUtil {
             //最近27日的收盘价
             for (int j = maxn; j < slist.size(); j++) {
                 List<Double> closeList = new ArrayList<>();
+                List<Double> vaourList = new ArrayList<>();
                 for (int k = 0; k <= j; k++) {
                     closeList.add(slist.get(k).getSclose());
+                    if(k> j-5){
+                        vaourList.add(slist.get(k).getSvatur());
+                    }
                 }
                 String so = "";
                 so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
@@ -445,8 +449,8 @@ public class CommUtil {
                 macd.add(getMACD(closeList, shortnum, langnum, mid));
                 zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 21));
-                avgVatur.add(getMA(closeList, 12));
-                avgotur.add(getMA(closeList, 12));
+                avgVatur.add(getMA(vaourList, 5));
+                avgotur.add(getMA(closeList, 5));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
                 so += getNumFormat(macd.get(j - maxn).get("DIF"))
@@ -569,6 +573,7 @@ public class CommUtil {
     public static Double calWeight(List<SIndexEntity> slist) {
         SIndexEntity dlast = slist.get(slist.size() - 1);
         SIndexEntity dsecond = slist.get(slist.size() - 2);
+        SIndexEntity dthird = slist.get(slist.size() - 3);
         SIndexEntity dfive = slist.get(0);
         double weight = -1d;
         //最重要的还是看大趋势，2天的小趋势不可靠
@@ -578,11 +583,11 @@ public class CommUtil {
 //        if (macd1 < 0 && macd2 > 0)
 //            weight -= 1d;
         double ms1 = dlast.getMms() - dsecond.getMms();
-        double ms2 = dsecond.getMms() - dfive.getMms();
+        double ms2 = (dsecond.getMms() - dfive.getMms())/3d;
 //        if (ms1 < 0 && ms2 < 0 && dlast.getMms() < dlast.getMml())
 //            weight -= 1d;
         double ms_mm1 = dlast.getMms() - dlast.getMmm();
-        double ms_mm2 = dsecond.getMms() - dsecond.getMmm();
+        double ms_mm2 = dthird.getMms() - dthird.getMmm();
 //        if (ms_mm1 < ms_mm2)
 //            weight -= 1d;
         double emac1 = dlast.getEma12() - dlast.getEma50();
@@ -590,7 +595,7 @@ public class CommUtil {
 //        if (emac1 < emac5)
 //            weight -= 1d;
         //第二种方案，只买特定条件的
-        if (macd1 > macd2 && ms1 > 0 && ms2>0 && ms_mm1>=ms_mm2) {
+        if (macd1 > macd2 && ms1 >=ms2 && ms2>0 && ms_mm1>ms_mm2 && ms_mm1>0) {
             weight += 1d;
         }
 
@@ -726,29 +731,30 @@ public class CommUtil {
             List<SIndexEntity> ilist = sindexList.get(j);
             for (int i = 4; i < tnum; i++) { //按天循环每个股票，从第5天开始
                 //选股条件1，
-                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
-                    if (ilist.get(i - 2).getShigh() <= ilist.get(i).getBoll() * 1.05) {
-                        if (ilist.get(i).getSopen() > ilist.get(i).getBoll()
-                                && ilist.get(i).getSclose() < ilist.get(i).getBoll()) {
-                            if(ilist.get(i).getAvgvatur()>80000000d){
-//                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
-                            ilist.get(i).setIsok(true);
-                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));
-                            }
-                        }
-                    }
-                }
-                //选股条件2
 //                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
-//                    if (ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0
-//                    && ilist.get(i-2).getMacd()<0) {
-//                        if (ilist.get(i).getDif() > 0 && ilist.get(i).getDea() > 0) {
-//                            if(ilist.get(i-2).getSclose()<ilist.get(i).getBoll()*1.03
-//                                    && ilist.get(i).getSclose()>ilist.get(i).getBoll()){
+//                    if (ilist.get(i - 2).getShigh() <= ilist.get(i).getBoll() * 1.05) {
+//                        if (ilist.get(i).getSopen() > ilist.get(i).getBoll()
+//                                && ilist.get(i).getSclose() < ilist.get(i).getBoll()) {
+//                            if(ilist.get(i).getAvgvatur()>80000000d){
+////                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
 //                            ilist.get(i).setIsok(true);
-//                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));}
+//                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));
+//                            }
 //                        }
 //                    }
+//                }
+                //选股条件2
+//                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+                    if (ilist.get(i - 1).getMacd() < ilist.get(i).getMacd()
+                    && ilist.get(i-2).getMacd()<ilist.get(i - 1).getMacd()) {
+                        if (ilist.get(i).getDif() > 0 && ilist.get(i).getDea()>0) {
+                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*0.85){
+                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
+                            ilist.get(i).setIsok(true);
+                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));}
+                         }
+                        }
+                    }
 //                }
             }
         }
