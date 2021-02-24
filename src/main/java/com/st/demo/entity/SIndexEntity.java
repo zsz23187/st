@@ -27,6 +27,8 @@ public class SIndexEntity {
     Double ema12;
     Double ema50;
     Double boll;
+    Double bollmax;
+    Double bollmin;
     Double mms;
     Double mml;
     Double mmm;

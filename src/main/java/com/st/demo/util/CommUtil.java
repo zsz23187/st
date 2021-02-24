@@ -424,7 +424,7 @@ public class CommUtil {
             System.out.println("开始分析-" + i);
             List<SIndexEntity> indexList = new ArrayList<>();
             List<Map<String, Double>> macd = new ArrayList<>();
-            List<Double> boll = new ArrayList<>();
+            List<Double[]> boll = new ArrayList<>();
             List<Double[]> zlmm = new ArrayList<>();
             List<Double> ema12 = new ArrayList<>();
             List<Double> ema50 = new ArrayList<>();
@@ -437,10 +437,12 @@ public class CommUtil {
             for (int j = maxn; j < slist.size(); j++) {
                 List<Double> closeList = new ArrayList<>();
                 List<Double> vaourList = new ArrayList<>();
+                List<Double> oturList = new ArrayList<>();
                 for (int k = 0; k <= j; k++) {
                     closeList.add(slist.get(k).getSclose());
                     if(k> j-5){
                         vaourList.add(slist.get(k).getSvatur());
+                        oturList.add(slist.get(k).getSotur());
                     }
                 }
                 String so = "";
@@ -448,9 +450,9 @@ public class CommUtil {
                         slist.get(j).getStime() + ",";
                 macd.add(getMACD(closeList, shortnum, langnum, mid));
                 zlmm.add(getZLMM(closeList));
-                boll.add(getBoll(closeList, 21));
+                boll.add(getBoll(closeList, 20));
                 avgVatur.add(getMA(vaourList, 5));
-                avgotur.add(getMA(closeList, 5));
+                avgotur.add(getMA(oturList, 5));
                 ema12.add(getEXPMA(closeList, 12));
                 ema50.add(getEXPMA(closeList, 50));
                 so += getNumFormat(macd.get(j - maxn).get("DIF"))
@@ -459,7 +461,7 @@ public class CommUtil {
                 so += "," + getNumFormat(zlmm.get(j - maxn)[0])
                         + "," + getNumFormat(zlmm.get(j - maxn)[1])
                         + "," + getNumFormat(zlmm.get(j - maxn)[2]);
-                so += "," + getNumFormat(boll.get(j - maxn));
+                so += "," + getNumFormat(boll.get(j - maxn)[0]);
                 so += "," + getNumFormat(ema12.get(j - maxn));
                 so += "," + getNumFormat(ema50.get(j - maxn));
 //                outText.add(so);
@@ -470,7 +472,9 @@ public class CommUtil {
                 sindex.setDea(getNumDouble(macd.get(j - maxn).get("DEA")));
                 sindex.setEma12(getNumDouble(ema12.get(j - maxn)));
                 sindex.setEma50(getNumDouble(ema50.get(j - maxn)));
-                sindex.setBoll(getNumDouble(boll.get(j - maxn)));
+                sindex.setBoll(getNumDouble(boll.get(j - maxn)[0]));
+                sindex.setBollmax(getNumDouble(boll.get(j-maxn)[1]));
+                sindex.setBollmin(getNumDouble(boll.get(j-maxn)[2]));
                 sindex.setMms(getNumDouble(zlmm.get(j - maxn)[0]));
                 sindex.setMmm(getNumDouble(zlmm.get(j - maxn)[1]));
                 sindex.setMml(getNumDouble(zlmm.get(j - maxn)[2]));
@@ -686,9 +690,22 @@ public class CommUtil {
      * @param num
      * @return
      */
-    public static double getBoll(List<Double> slist, int num) {
-        double boll = 0d;
-        boll = getMA(slist, num);
+    public static Double[] getBoll(List<Double> slist, int num) {
+        Double[] boll = new Double[3];
+        boll[0] = getMA(slist, num);
+        double sum = 0;
+        for(int i=0;i<slist.size();i++){
+            sum += slist.get(i);      //求出数组的总和
+        }
+
+        double average = sum/slist.size();  //求出数组的平均数
+        double total=0;
+        for(int i=0;i< slist.size(); i++){
+            total += (slist.get(i)-average)*(slist.get(i)-average);   //求出方差，如果要计算方差的话这一步就可以了
+        }
+        double standardDeviation = Math.sqrt(total/slist.size());   //求出标准差
+        boll[1] = boll[0] + 2*standardDeviation;
+        boll[2] = boll[0] - 2*standardDeviation;
         return boll;
     }
 
@@ -744,17 +761,32 @@ public class CommUtil {
 //                    }
 //                }
                 //选股条件2
-//                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
-                    if (ilist.get(i - 1).getMacd() < ilist.get(i).getMacd()
-                    && ilist.get(i-2).getMacd()<ilist.get(i - 1).getMacd()) {
-                        if (ilist.get(i).getDif() > 0 && ilist.get(i).getDea()>0) {
-                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*0.85){
-                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
+                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+                    if (ilist.get(i - 2).getMacd() < ilist.get(i-1).getMacd()
+                    && ilist.get(i-1).getMacd()<ilist.get(i).getMacd() &&
+                    ilist.get(i-3).getMacd()>ilist.get(i-2).getMacd() &&
+                    ilist.get(i).getMacd()>0) {
+                        if (ilist.get(i).getDif() > ilist.get(i-1).getDif() &&
+                        ilist.get(i).getDif()>ilist.get(i).getDea()) {
+                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*0.95){
+//                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
                             ilist.get(i).setIsok(true);
-                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));}
+                            ilist.get(i).setWeight(0d); //calWeight(ilist.subList(i - 4, i + 1)));
+//                            }
                          }
                         }
                     }
+                }
+                //选股条件3
+//                if (ilist.get(i).getSclose()>ilist.get(i).getBollmin() && ilist.get(i-1).getSclose()< ilist.get(i).getBollmin()) {
+//                        if (ilist.get(i).getSotur() > ilist.get(i).getAvgotur()*0.9
+//                                && ilist.get(i).getDif() > ilist.get(i-1).getDif()) {
+////                            if(ilist.get(i).getAvgvatur()>80000000d){
+////                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
+//                            ilist.get(i).setIsok(true);
+//                            ilist.get(i).setWeight(0d);
+////                            }
+//                        }
 //                }
             }
         }
@@ -793,6 +825,7 @@ public class CommUtil {
                 }
 
             }
+
             if (status1 == 0 && i == tsell1) { //资金1当天可以卖
                 money1 = daySell(money1, tradeInfo, sindexList, i, 0, tsell);
                 status1 = 1; //转为买入状态
