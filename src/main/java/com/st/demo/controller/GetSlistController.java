@@ -547,15 +547,21 @@ public class GetSlistController {
             int num = jso.getNum();
             int tnum = jso.getTnum();
             int tsell = jso.getTsell();
+            int method = jso.getMethod();
             List<List<SinfoEntity>> reList = new ArrayList<>();
             List<SlistEntity> slList = slistService.findAll();
 
             //最近num天数据
-            List<SinfoEntity> stList = sinfoService.findByCodeTime(scode, beg, end); //findByTime(beg, end);
-            if (stList.size() > num - 1)
-                reList.add(stList);
-            else
-                System.out.println(scode + " 长度不够");
+            if (1 == method) {
+                List<SinfoEntity> stList = sinfoService.findByCodeTime(scode, beg, end); //findByTime(beg, end);
+                tnum = stList.size() - 50;
+                if (stList.size() > num - 1)
+                    reList.add(stList);
+                else
+                    System.out.println(scode + " 长度不够");
+                if (reList.size() < 10000 && reList.size() > 0)
+                CommUtil.method5(reList, 12, 26, 9, tsell, tnum, new ArrayList<>());
+            }
             //method2
 //            List<SinfoEntity> stList = sinfoService.findByTime(beg,end);
 //            for (int j = 0; j < slList.size(); j++) { //slList.size()
@@ -571,15 +577,25 @@ public class GetSlistController {
 //            }
             //method2
             //method3
-//            for (int i = 0; i < slList.size(); i++) {
-//                List<SinfoEntity> selist = sinfoService.findByCodeTime(slList.get(i).getScode(),beg,end);
-//                if (null != selist && selist.size() > num - 1) {
-//                    reList.add(selist);
-//                }
-//            }
+            if (3 == method) {
+                List<SlistEntity> sok = new ArrayList<>();
+                for (int i = 0; i < slList.size(); i++) {
+                    List<SinfoEntity> selist = sinfoService.findByCodeTime(slList.get(i).getScode(), beg, end);
+                    if (null != selist && selist.size() > num - 1) {
+                        System.out.println("code：" + slList.get(i).getScode() + "   进度：" + i + "/" + slList.size());
+                        reList.add(selist);
+                        tnum = selist.size() - 50;
+                        CommUtil.method5(reList, 12, 26, 9, tsell, tnum, sok);
+                    }
+                    reList.clear();
+                }
+                sok.forEach(f -> {
+                    System.out.print(f.getScode() + "," + f.getSname() + ";");
+                });
+            }
             //method3
-            if (reList.size() < 10000 && reList.size() > 0)
-                CommUtil.method5(reList, 12, 26, 9, tsell, tnum);
+//            if (reList.size() < 10000 && reList.size() > 0)
+//                CommUtil.method5(reList, 12, 26, 9, tsell, tnum);
 
             System.out.println("完了");
         } catch (Exception e) {
@@ -597,5 +613,6 @@ public class GetSlistController {
         Integer num;
         Integer tnum;
         Integer tsell;
+        Integer method;
     }
 }

@@ -2,6 +2,7 @@ package com.st.demo.util;
 
 import com.st.demo.entity.SIndexEntity;
 import com.st.demo.entity.SinfoEntity;
+import com.st.demo.entity.SlistEntity;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -404,13 +405,13 @@ public class CommUtil {
      * @param tnum     从数据的倒数第n天开始统计
      */
     public static void method5(List<List<SinfoEntity>> rlist, int shortnum, int langnum,
-                               int mid, int tsell, int tnum) {
+                               int mid, int tsell, int tnum,List<SlistEntity> sok) {
         FileWriter fw = null;
         try {
 //如果文件存在，则追加内容；如果文件不存在，则创建文件
             File f = new File("D:\\stest\\macd.txt");
-            if (f.exists())
-                f.delete();
+//            if (f.exists())
+//                f.delete();
             fw = new FileWriter(f, true);
         } catch (IOException e) {
             e.printStackTrace();
@@ -421,7 +422,7 @@ public class CommUtil {
         List<List<SIndexEntity>> sindexList = new ArrayList<>();
 //        pw.println("代码,名称,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,日期,open,涨跌,幅度");
         for (int i = 0; i < rlist.size(); i++) {
-            System.out.println("开始分析-" + i);
+//            System.out.println("开始分析-" + i);
             List<SIndexEntity> indexList = new ArrayList<>();
             List<Map<String, Double>> macd = new ArrayList<>();
             List<Double[]> boll = new ArrayList<>();
@@ -431,7 +432,7 @@ public class CommUtil {
             List<Double> avgVatur = new ArrayList<>(); //n日交易额平均值
             List<Double> avgotur = new ArrayList<>(); //n日交易量平均值
             List<SinfoEntity> slist = rlist.get(i);
-
+//            System.out.println("开始分析-" + slist.get(0).getScode());
             int maxn = slist.size() - tnum;
             //最近27日的收盘价
             for (int j = maxn; j < slist.size(); j++) {
@@ -439,17 +440,19 @@ public class CommUtil {
                 List<Double> vaourList = new ArrayList<>();
                 List<Double> oturList = new ArrayList<>();
                 for (int k = 0; k <= j; k++) {
-                    closeList.add(slist.get(k).getSclose());
                     if(k> j-5){
                         vaourList.add(slist.get(k).getSvatur());
                         oturList.add(slist.get(k).getSotur());
+                    }
+                    if(k > j-60){
+                        closeList.add(slist.get(k).getSclose());
                     }
                 }
                 String so = "";
                 so += slist.get(j).getScode() + "," + slist.get(j).getSname() + "," +
                         slist.get(j).getStime() + ",";
                 macd.add(getMACD(closeList, shortnum, langnum, mid));
-                zlmm.add(getZLMM(closeList));
+//                zlmm.add(getZLMM(closeList));
                 boll.add(getBoll(closeList, 20));
                 avgVatur.add(getMA(vaourList, 5));
                 avgotur.add(getMA(oturList, 5));
@@ -458,9 +461,9 @@ public class CommUtil {
                 so += getNumFormat(macd.get(j - maxn).get("DIF"))
                         + "," + getNumFormat(macd.get(j - maxn).get("DEA"))
                         + "," + getNumFormat(macd.get(j - maxn).get("MACD"));
-                so += "," + getNumFormat(zlmm.get(j - maxn)[0])
-                        + "," + getNumFormat(zlmm.get(j - maxn)[1])
-                        + "," + getNumFormat(zlmm.get(j - maxn)[2]);
+//                so += "," + getNumFormat(zlmm.get(j - maxn)[0])
+//                        + "," + getNumFormat(zlmm.get(j - maxn)[1])
+//                        + "," + getNumFormat(zlmm.get(j - maxn)[2]);
                 so += "," + getNumFormat(boll.get(j - maxn)[0]);
                 so += "," + getNumFormat(ema12.get(j - maxn));
                 so += "," + getNumFormat(ema50.get(j - maxn));
@@ -475,9 +478,9 @@ public class CommUtil {
                 sindex.setBoll(getNumDouble(boll.get(j - maxn)[0]));
                 sindex.setBollmax(getNumDouble(boll.get(j-maxn)[1]));
                 sindex.setBollmin(getNumDouble(boll.get(j-maxn)[2]));
-                sindex.setMms(getNumDouble(zlmm.get(j - maxn)[0]));
-                sindex.setMmm(getNumDouble(zlmm.get(j - maxn)[1]));
-                sindex.setMml(getNumDouble(zlmm.get(j - maxn)[2]));
+//                sindex.setMms(getNumDouble(zlmm.get(j - maxn)[0]));
+//                sindex.setMmm(getNumDouble(zlmm.get(j - maxn)[1]));
+//                sindex.setMml(getNumDouble(zlmm.get(j - maxn)[2]));
                 sindex.setAvgvatur(getNumDouble(avgVatur.get(j - maxn)));
                 sindex.setAvgotur(getNumDouble(avgotur.get(j - maxn)));
                 indexList.add(sindex);
@@ -485,7 +488,7 @@ public class CommUtil {
             sindexList.add(indexList);
         }
         rlist = null;
-        System.out.println("开始选股");
+//        System.out.println("开始选股");
         //开始选股，一定时间内每天符合条件的都选出来
         /*
         List<List<SIndexEntity>> okStock = new ArrayList<>();
@@ -523,7 +526,7 @@ public class CommUtil {
         }*/
         //----------一定时间的选股方法结束-----------
         //模拟买卖,包括选股票
-        simulateMM(tnum, sindexList, outText, tsell);
+        simulateMM2(tnum, sindexList, outText, tsell, sok);
         //模拟买卖结束
         //开始选股，第一步只选最后一天符合要求
         /*
@@ -557,7 +560,7 @@ public class CommUtil {
         }
          */
         //----------最后一天的选股方法结束-----------
-        System.out.println("开始输出");
+//        System.out.println("开始输出");
         PrintWriter pw = new PrintWriter(fw);
 //        pw.println("代码,名称,日期,DIF,DEA,MACD,MMS,MMM,MML,BOLL,EMA12,EMA50,权重");
         for (String s : outText) {
@@ -761,33 +764,33 @@ public class CommUtil {
 //                    }
 //                }
                 //选股条件2
-                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
-                    if (ilist.get(i - 2).getMacd() < ilist.get(i-1).getMacd()
-                    && ilist.get(i-1).getMacd()<ilist.get(i).getMacd() &&
-                    ilist.get(i-3).getMacd()>ilist.get(i-2).getMacd() &&
-                    ilist.get(i).getMacd()>0) {
-                        if (ilist.get(i).getDif() > ilist.get(i-1).getDif() &&
-                        ilist.get(i).getDif()>ilist.get(i).getDea()) {
-                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*0.95){
-//                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
-                            ilist.get(i).setIsok(true);
-                            ilist.get(i).setWeight(0d); //calWeight(ilist.subList(i - 4, i + 1)));
-//                            }
-                         }
-                        }
-                    }
-                }
-                //选股条件3
-//                if (ilist.get(i).getSclose()>ilist.get(i).getBollmin() && ilist.get(i-1).getSclose()< ilist.get(i).getBollmin()) {
-//                        if (ilist.get(i).getSotur() > ilist.get(i).getAvgotur()*0.9
-//                                && ilist.get(i).getDif() > ilist.get(i-1).getDif()) {
-////                            if(ilist.get(i).getAvgvatur()>80000000d){
-////                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
+//                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+//                    if (ilist.get(i - 2).getMacd() < ilist.get(i-1).getMacd()
+//                    && ilist.get(i-1).getMacd()<ilist.get(i).getMacd() &&
+//                    ilist.get(i-3).getMacd()>ilist.get(i-2).getMacd() ) {
+//                        if (ilist.get(i).getDif() > ilist.get(i-1).getDif() &&
+//                        ilist.get(i).getDif()>ilist.get(i).getDea()) {
+//                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*1.3){
+////                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
 //                            ilist.get(i).setIsok(true);
-//                            ilist.get(i).setWeight(0d);
+//                            ilist.get(i).setWeight(0d); //calWeight(ilist.subList(i - 4, i + 1)));
 ////                            }
+//                         }
 //                        }
+//                    }
 //                }
+                //选股条件3
+                if (ilist.get(i).getSclose()>ilist.get(i).getBoll() && ilist.get(i).getSopen()< ilist.get(i).getBoll()) {
+                        if (ilist.get(i).getSotur() > ilist.get(i).getAvgotur()*1.3
+                             && ilist.get(i).getBoll()>ilist.get(i-1).getBoll()
+                                &&ilist.get(i).getDif()>0) {
+//                            if(ilist.get(i).getAvgvatur()>80000000d){
+//                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
+                            ilist.get(i).setIsok(true);
+                            ilist.get(i).setWeight(0d);
+//                            }
+                        }
+                }
             }
         }
         // //代码,名称,交易日期,资金,权重,状态,开盘价,买入价,手数,总价
@@ -853,6 +856,123 @@ public class CommUtil {
         tradeInfo.add("资金1," + money1 + ",盈利," + getNumDouble(money1 - 1000000d) + ",百分比," + getNumDouble((money1 - 1000000d) / 1000000d));
         tradeInfo.add("资金2," + money2 + ",盈利," + getNumDouble(money2 - 1000000d) + ",百分比," + getNumDouble((money2 - 1000000d) / 1000000d));
     }
+
+    public static void simulateMM2(int tnum, List<List<SIndexEntity>> sindexList, List<String> tradeInfo, int tsell,
+                                   List<SlistEntity> sok) {
+        //计算所有股票在每天是否符合条件，符合的isok设为true，并设置权重
+//        List<String> tradeInfo = new ArrayList<>();// 每一笔交易的记录
+        for (int j = 0; j < sindexList.size(); j++) {
+            List<SIndexEntity> ilist = sindexList.get(j);
+            for (int i = 4; i < tnum; i++) { //按天循环每个股票，从第5天开始
+                //选股条件1，
+//                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+//                    if (ilist.get(i - 2).getShigh() <= ilist.get(i).getBoll() * 1.05) {
+//                        if (ilist.get(i).getSopen() > ilist.get(i).getBoll()
+//                                && ilist.get(i).getSclose() < ilist.get(i).getBoll()) {
+//                            if(ilist.get(i).getAvgvatur()>80000000d){
+////                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
+//                            ilist.get(i).setIsok(true);
+//                            ilist.get(i).setWeight(calWeight(ilist.subList(i - 4, i + 1)));
+//                            }
+//                        }
+//                    }
+//                }
+                //选股条件2
+//                if (ilist.get(i).getEma12() >= ilist.get(i).getEma50()) {
+//                    if (ilist.get(i - 2).getMacd() < ilist.get(i-1).getMacd()
+//                    && ilist.get(i-1).getMacd()<ilist.get(i).getMacd() &&
+//                    ilist.get(i-3).getMacd()>ilist.get(i-2).getMacd() ) {
+//                        if (ilist.get(i).getDif() > ilist.get(i-1).getDif() &&
+//                        ilist.get(i).getDif()>ilist.get(i).getDea()) {
+//                         if(ilist.get(i).getSvatur()>ilist.get(i).getAvgvatur()*1.3){
+////                            if(ilist.get(i).getSclose()<ilist.get(i).getBoll()*1.05001){
+//                            ilist.get(i).setIsok(true);
+//                            ilist.get(i).setWeight(0d); //calWeight(ilist.subList(i - 4, i + 1)));
+////                            }
+//                         }
+//                        }
+//                    }
+//                }
+                //选股条件3
+                if (ilist.get(i).getSclose()>ilist.get(i).getBoll() && ilist.get(i).getSopen()< ilist.get(i).getBoll()) {
+                    if (ilist.get(i).getSotur() > ilist.get(i).getAvgotur()*1.3
+                            && ilist.get(i).getBoll()>ilist.get(i-1).getBoll()
+                            &&ilist.get(i).getDif()>0) {
+//                            if(ilist.get(i).getAvgvatur()>80000000d){
+//                            if(ilist.get(i - 1).getMacd() < ilist.get(i).getMacd() && ilist.get(i).getMacd() > 0){
+                        ilist.get(i).setIsok(true);
+                        ilist.get(i).setWeight(0d);
+//                            }
+                    }
+                }
+            }
+        }
+        // //代码,名称,交易日期,资金,权重,状态,开盘价,买入价,手数,总价
+//        tradeInfo.add("代码,名称,交易日期,资金,权重,开盘价,状态,买卖价,手数,总价");
+        //开始进行买卖，每天进行循环
+        int tsell2 = 0;
+        for (int j = 0; j < sindexList.size(); j++) { //每个股票交易后 判断收益 获取收益大的
+            List<SIndexEntity> ilist = sindexList.get(j);
+            int status1 = 1; //1=当天买入，0=当天卖出,开始之前为当天买入
+            double money1 = 1000000d;
+            int tsell1 = 0;
+            int status2 = 1;
+            double money2 = 1000000d;
+            for(int i = 4; i < tnum; i++){ //每天进行计算
+                int scount = 0; //权重大于0的股票
+                int smcount = 0; //权重小于0但大于-0.6的股票
+                if (ilist.get(i).getIsok()) {
+                    if (ilist.get(i).getWeight() >= 0d)
+                        scount++;
+                    else if (ilist.get(i).getWeight() > -1d)
+                        smcount++;
+                }
+                if (status1 == 1) { //资金1当日可以买
+                    if (scount > 0 && i + tsell + 1 < tnum) {
+                        money1 = dayBuy(money1, tradeInfo, sindexList, i, scount, 0d, 0);
+                        status1 = 0;
+                        tsell1 = i + tsell + 1; //买的是第二天的股票，所以买出日=i+1+tsell
+                    } else if (smcount > 0 && i + tsell + 1 < tnum) {
+                        money1 = dayBuy(money1, tradeInfo, sindexList, i, smcount, -0.9d, 0);
+                        status1 = 0;
+                        tsell1 = i + tsell + 1;
+                    }
+                }
+
+                if (status1 == 0 && i == tsell1) { //资金1当天可以卖
+                    money1 = daySell(money1, tradeInfo, sindexList, i, 0, tsell);
+                    status1 = 1; //转为买入状态
+                }
+                if (status2 == 1 && tsell1 != i + tsell + 1) { //资金2当日可以买，且资金1没有买
+                    if (scount > 0 && i + tsell + 1 < tnum) {
+                        money2 = dayBuy(money2, tradeInfo, sindexList, i, scount, 0d, 1);
+                        status2 = 0;
+                        tsell2 = i + tsell + 1;
+                    } else if (smcount > 0 && i + tsell + 1 < tnum) {
+                        money2 = dayBuy(money2, tradeInfo, sindexList, i, smcount, -0.9d, 1);
+                        status2 = 0;
+                        tsell2 = i + tsell + 1;
+                    }
+                }
+                if (status2 == 0 && i == tsell2) {
+                    money2 = daySell(money2, tradeInfo, sindexList, i, 1, tsell);
+                    status2 = 1;
+                }
+            }
+            double money = money1+money2;
+            if(money<2000001d){
+                tradeInfo.removeIf(s -> s.contains(ilist.get(0).getScode()));
+            }else if(ilist.get(ilist.size()-1).getSclose()>ilist.get(0).getSclose()){
+                SlistEntity sl = new SlistEntity();
+                sl.setScode(ilist.get(0).getScode());
+                sl.setSname(ilist.get(0).getSname());
+                sok.add(sl);
+                //模拟结束，计算收入并输出
+                tradeInfo.add("资金1," + money1 + ",盈利," + getNumDouble(money1 - 1000000d) + ",百分比," + getNumDouble((money1 - 1000000d) / 1000000d));
+                tradeInfo.add("资金2," + money2 + ",盈利," + getNumDouble(money2 - 1000000d) + ",百分比," + getNumDouble((money2 - 1000000d) / 1000000d));
+            }
+        }
+     }
 
     /**
      * @param money1     总金额
